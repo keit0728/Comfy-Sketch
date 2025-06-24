@@ -1,17 +1,19 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useAtom } from "jotai";
 import { useTranslations } from "next-intl";
 import SketchCanvas from "./SketchCanvas";
 import LayerPanel from "./LayerPanel";
 import DrawingTools from "./DrawingTools";
 import SketchControls from "./SketchControls";
+import { TransformOverlay } from "./TransformOverlay";
 import {
   createLayerAtom,
   layersAtom,
   undoAtom,
   redoAtom,
+  appModeAtom,
 } from "@/stores/sketchStore";
 
 export default function SketchApp() {
@@ -20,6 +22,8 @@ export default function SketchApp() {
   const [, createLayer] = useAtom(createLayerAtom);
   const [, undo] = useAtom(undoAtom);
   const [, redo] = useAtom(redoAtom);
+  const [appMode] = useAtom(appModeAtom);
+  const canvasContainerRef = useRef<HTMLDivElement>(null);
 
   // Create initial layer
   useEffect(() => {
@@ -60,8 +64,13 @@ export default function SketchApp() {
       {/* Main area */}
       <div className="flex-1 flex overflow-hidden">
         {/* Canvas area */}
-        <div className="flex-1 p-4">
-          <SketchCanvas />
+        <div className="flex-1 p-4" ref={canvasContainerRef}>
+          <div className="relative w-full h-full">
+            <SketchCanvas />
+            {appMode === "transform" && (
+              <TransformOverlay containerRef={canvasContainerRef} />
+            )}
+          </div>
         </div>
 
         {/* Layer panel */}

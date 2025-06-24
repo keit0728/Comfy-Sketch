@@ -13,31 +13,29 @@ import {
   addToHistoryAtom,
   cameraBoundsAtom,
   resizeCanvasesAtom,
+  appModeAtom,
+  selectedLayerIdAtom,
+  type Layer,
 } from "@/stores/sketchStore";
 
 interface LayerPlaneProps {
-  layer: {
-    id: string;
-    name: string;
-    visible: boolean;
-    opacity: number;
-    zIndex: number;
-    canvas: HTMLCanvasElement | null;
-    texture: THREE.CanvasTexture | null;
-  };
+  layer: Layer;
   isActive: boolean;
-  onDraw: (
-    event: ThreeEvent<PointerEvent>,
-    layer: LayerPlaneProps["layer"],
-  ) => void;
+  onDraw: (event: ThreeEvent<PointerEvent>, layer: Layer) => void;
+  onSelect?: (layerId: string) => void;
 }
 
 function LayerPlane({
   layer,
   isActive,
   onDraw,
+  onSelect,
   cameraBounds = { width: 8, height: 6 },
-}: LayerPlaneProps & { cameraBounds?: { width: number; height: number } }) {
+  appMode,
+}: LayerPlaneProps & {
+  cameraBounds?: { width: number; height: number };
+  appMode: "draw" | "transform";
+}) {
   const meshRef = useRef<THREE.Mesh>(null);
 
   useEffect(() => {
@@ -49,20 +47,33 @@ function LayerPlane({
   if (!layer.visible || !layer.texture) return null;
 
   const handlePointerEvent = (event: ThreeEvent<PointerEvent>) => {
-    if (isActive) {
-      event.stopPropagation();
+    event.stopPropagation();
+    if (appMode === "transform" && event.type === "pointerdown") {
+      onSelect?.(layer.id);
+    } else if (appMode === "draw" && isActive) {
       onDraw(event, layer);
     }
+  };
+
+  // Apply transform if exists
+  const transform = layer.transform || {
+    x: 0,
+    y: 0,
+    width: cameraBounds.width,
+    height: cameraBounds.height,
+    scale: 1,
   };
 
   return (
     <mesh
       ref={meshRef}
-      position={[0, 0, layer.zIndex * 0.001]}
+      position={[transform.x, transform.y, layer.zIndex * 0.001]}
+      scale={[transform.scale, transform.scale, 1]}
       onPointerDown={handlePointerEvent}
       onPointerMove={handlePointerEvent}
+      onPointerUp={handlePointerEvent}
     >
-      <planeGeometry args={[cameraBounds.width, cameraBounds.height]} />
+      <planeGeometry args={[transform.width, transform.height]} />
       <meshBasicMaterial
         map={layer.texture}
         transparent
@@ -82,6 +93,8 @@ export default function SketchCanvas() {
   const [, addToHistory] = useAtom(addToHistoryAtom);
   const [cameraBounds, setCameraBounds] = useAtom(cameraBoundsAtom);
   const [, resizeCanvases] = useAtom(resizeCanvasesAtom);
+  const [appMode] = useAtom(appModeAtom);
+  const [, setSelectedLayerId] = useAtom(selectedLayerIdAtom);
 
   const activeLayer = layers.find((layer) => layer.id === activeLayerId);
 
@@ -185,21 +198,38 @@ export default function SketchCanvas() {
   }, [stopDrawing]);
 
   const handleDraw = useCallback(
-    (event: ThreeEvent<PointerEvent>, layer: LayerPlaneProps["layer"]) => {
+    (event: ThreeEvent<PointerEvent>, layer: Layer) => {
       if (!layer.canvas || layer.id !== activeLayerId) return;
 
       const ctx = layer.canvas.getContext("2d");
       if (!ctx) return;
 
-      // Convert Three.js coordinates to canvas coordinates using dynamic camera bounds
-      const bounds = cameraBounds;
-      // Normalize coordinates to [0, 1] range
-      const normalizedX = (event.point.x + bounds.width / 2) / bounds.width;
-      const normalizedY = (event.point.y + bounds.height / 2) / bounds.height; // Don't invert Y - use same coordinate system
+      // Get layer transform or use defaults
+      const transform = layer.transform || {
+        x: 0,
+        y: 0,
+        width: cameraBounds.width,
+        height: cameraBounds.height,
+        scale: 1,
+      };
+
+      // Convert world coordinates to layer-local coordinates
+      // Account for scale transform
+      const localX = (event.point.x - transform.x) / transform.scale;
+      const localY = (event.point.y - transform.y) / transform.scale;
+
+      // Normalize to layer bounds [-0.5, 0.5] then to [0, 1]
+      const normalizedX = (localX / transform.width) + 0.5;
+      const normalizedY = (localY / transform.height) + 0.5;
 
       // Map to canvas coordinates
       const x = normalizedX * canvasSize.width;
       const y = normalizedY * canvasSize.height;
+
+      // Check if the point is within the layer bounds
+      if (normalizedX < 0 || normalizedX > 1 || normalizedY < 0 || normalizedY > 1) {
+        return;
+      }
 
       if (event.type === "pointerdown") {
         // Set pointer capture to ensure we receive all subsequent events
@@ -362,7 +392,7 @@ export default function SketchCanvas() {
             // Store camera reference and set initial bounds
             if (camera.type === "OrthographicCamera") {
               cameraRef.current = camera as THREE.OrthographicCamera;
-              
+
               // Set initial camera bounds based on current cameraBounds state
               const orthoCam = camera as THREE.OrthographicCamera;
               orthoCam.left = -cameraBounds.width / 2;
@@ -387,7 +417,7 @@ export default function SketchCanvas() {
         <ambientLight intensity={1} />
 
         {/* Background transparent plane (for click detection) */}
-        {activeLayer && (
+        {activeLayer && appMode === "draw" && (
           <mesh
             position={[0, 0, -0.001]}
             onPointerDown={(event) => handleDraw(event, activeLayer)}
@@ -404,9 +434,11 @@ export default function SketchCanvas() {
             <LayerPlane
               key={layer.id}
               layer={layer}
-              isActive={false} // Process events with background plane
-              onDraw={(event) => handleDraw(event, layer)}
+              isActive={appMode === "draw" && layer.id === activeLayerId}
+              onDraw={handleDraw}
+              onSelect={setSelectedLayerId}
               cameraBounds={cameraBounds}
+              appMode={appMode}
             />
           ))}
       </Canvas>

@@ -1,10 +1,10 @@
 "use client";
 
-import { useAtom } from "jotai";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
-import { Brush, Eraser } from "lucide-react";
-import { drawingToolAtom } from "@/stores/sketchStore";
+import { Brush, Eraser, Move } from "lucide-react";
+import { drawingToolAtom, appModeAtom, activeLayerIdAtom, selectedLayerIdAtom } from "@/stores/sketchStore";
 import { useState } from "react";
 
 const BRUSH_SIZES = [
@@ -15,6 +15,9 @@ const BRUSH_SIZES = [
 export default function DrawingTools() {
   const t = useTranslations("common");
   const [drawingTool, setDrawingTool] = useAtom(drawingToolAtom);
+  const [appMode, setAppMode] = useAtom(appModeAtom);
+  const activeLayerId = useAtomValue(activeLayerIdAtom);
+  const setSelectedLayerId = useSetAtom(selectedLayerIdAtom);
   const [showBrushSizes, setShowBrushSizes] = useState(false);
 
   const handleToolChange = (type: "brush" | "eraser") => {
@@ -26,7 +29,6 @@ export default function DrawingTools() {
     setShowBrushSizes(false);
   };
 
-
   const handleOpacityChange = (opacity: number) => {
     setDrawingTool({ ...drawingTool, opacity });
   };
@@ -35,16 +37,43 @@ export default function DrawingTools() {
     <div className="flex items-center gap-2 p-4 bg-white border-b border-gray-200">
       <div className="flex items-center gap-1 mr-4">
         <Button
-          variant={drawingTool.type === "brush" ? "default" : "outline"}
+          variant={appMode === "transform" ? "default" : "outline"}
           size="sm"
-          onClick={() => handleToolChange("brush")}
+          onClick={() => {
+            setAppMode("transform");
+            // Select the active layer when switching to transform mode
+            if (activeLayerId) {
+              setSelectedLayerId(activeLayerId);
+            }
+          }}
+        >
+          <Move className="w-4 h-4" />
+        </Button>
+        <Button
+          variant={
+            appMode === "draw" && drawingTool.type === "brush"
+              ? "default"
+              : "outline"
+          }
+          size="sm"
+          onClick={() => {
+            setAppMode("draw");
+            handleToolChange("brush");
+          }}
         >
           <Brush className="w-4 h-4" />
         </Button>
         <Button
-          variant={drawingTool.type === "eraser" ? "default" : "outline"}
+          variant={
+            appMode === "draw" && drawingTool.type === "eraser"
+              ? "default"
+              : "outline"
+          }
           size="sm"
-          onClick={() => handleToolChange("eraser")}
+          onClick={() => {
+            setAppMode("draw");
+            handleToolChange("eraser");
+          }}
         >
           <Eraser className="w-4 h-4" />
         </Button>
@@ -99,11 +128,15 @@ export default function DrawingTools() {
               <input
                 type="color"
                 value={drawingTool.color}
-                onChange={(e) => setDrawingTool({ ...drawingTool, color: e.target.value })}
+                onChange={(e) =>
+                  setDrawingTool({ ...drawingTool, color: e.target.value })
+                }
                 className="w-full h-full cursor-pointer opacity-0"
               />
             </div>
-            <span className="text-xs text-gray-500 font-mono w-16 inline-block">{drawingTool.color}</span>
+            <span className="text-xs text-gray-500 font-mono w-16 inline-block">
+              {drawingTool.color}
+            </span>
           </label>
         </div>
       )}
@@ -125,8 +158,16 @@ export default function DrawingTools() {
       </div>
 
       <div className="ml-auto text-xs text-gray-500">
-        {drawingTool.type === "brush" ? t("sketch.brush") : t("sketch.eraser")}{" "}
-        •{drawingTool.size}px •{Math.round(drawingTool.opacity * 100)}%
+        {appMode === "transform"
+          ? t("sketch.transform")
+          : drawingTool.type === "brush"
+            ? t("sketch.brush")
+            : t("sketch.eraser")}{" "}
+        {appMode === "draw" && (
+          <>
+            •{drawingTool.size}px •{Math.round(drawingTool.opacity * 100)}%
+          </>
+        )}
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useAtom } from "jotai";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Eye, EyeOff, Plus, Trash2, GripVertical } from "lucide-react";
@@ -13,6 +13,8 @@ import {
   toggleLayerVisibilityAtom,
   updateLayerOpacityAtom,
   reorderLayersAtom,
+  appModeAtom,
+  selectedLayerIdAtom,
 } from "@/stores/sketchStore";
 import { useState } from "react";
 
@@ -153,6 +155,8 @@ export default function LayerPanel() {
   const [, toggleLayerVisibility] = useAtom(toggleLayerVisibilityAtom);
   const [, updateLayerOpacity] = useAtom(updateLayerOpacityAtom);
   const [, reorderLayers] = useAtom(reorderLayersAtom);
+  const appMode = useAtomValue(appModeAtom);
+  const setSelectedLayerId = useSetAtom(selectedLayerIdAtom);
 
   // Drag and drop state
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
@@ -160,7 +164,11 @@ export default function LayerPanel() {
 
   const handleCreateLayer = () => {
     const layerCount = layers.length + 1;
-    createLayer(`${t("sketch.layer")} ${layerCount}`);
+    const newLayerId = createLayer(`${t("sketch.layer")} ${layerCount}`);
+    // Also update selected layer in transform mode
+    if (appMode === "transform" && newLayerId) {
+      setSelectedLayerId(newLayerId);
+    }
   };
 
   const handleDeleteLayer = (layerId: string) => {
@@ -222,7 +230,13 @@ export default function LayerPanel() {
               layer={layer}
               index={index}
               isActive={layer.id === activeLayerId}
-              onSelect={setActiveLayerId}
+              onSelect={(layerId) => {
+                setActiveLayerId(layerId);
+                // Also update selected layer in transform mode
+                if (appMode === "transform") {
+                  setSelectedLayerId(layerId);
+                }
+              }}
               onToggleVisibility={toggleLayerVisibility}
               onDelete={handleDeleteLayer}
               onOpacityChange={updateLayerOpacity}

@@ -22,6 +22,7 @@
     "exportAll": "全体を保存",
     "clearLayer": "レイヤーをクリア",
     "noLayers": "レイヤーがありません",
-    "createFirstLayer": "最初のレイヤーを作成"
+    "createFirstLayer": "最初のレイヤーを作成",
+    "transform": "変形"
   }
 }

@@ -1,6 +1,14 @@
 import { atom } from "jotai";
 import * as THREE from "three";
 
+export interface LayerTransform {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  scale: number;
+}
+
 export interface Layer {
   id: string;
   name: string;
@@ -9,6 +17,7 @@ export interface Layer {
   zIndex: number;
   canvas: HTMLCanvasElement | null;
   texture: THREE.CanvasTexture | null;
+  transform?: LayerTransform;
 }
 
 export interface DrawingTool {
@@ -42,6 +51,28 @@ export const drawingStateAtom = atom<DrawingState>({
   isDrawing: false,
   lastPoint: null,
 });
+
+// Application mode
+export type AppMode = "draw" | "transform";
+export const appModeAtom = atom<AppMode>("draw");
+
+// Selected layer for transformation
+export const selectedLayerIdAtom = atom<string | null>(null);
+
+// Transform handle being dragged
+export type ResizeHandle =
+  | "nw"
+  | "ne"
+  | "se"
+  | "sw"
+  | "move";
+export const activeResizeHandleAtom = atom<ResizeHandle | null>(null);
+
+// Mouse position during transform
+export const transformStartMouseAtom = atom<{ x: number; y: number } | null>(
+  null,
+);
+export const transformStartBoundsAtom = atom<LayerTransform | null>(null);
 
 // Camera bounds for coordinate system
 export const cameraBoundsAtom = atom({
@@ -349,3 +380,15 @@ export const resizeCanvasesAtom = atom(null, (get, set) => {
 
   set(layersAtom, updatedLayers);
 });
+
+// Update layer transform
+export const updateLayerTransformAtom = atom(
+  null,
+  (get, set, layerId: string, transform: LayerTransform) => {
+    const layers = get(layersAtom);
+    const updatedLayers = layers.map((layer) =>
+      layer.id === layerId ? { ...layer, transform } : layer,
+    );
+    set(layersAtom, updatedLayers);
+  },
+);

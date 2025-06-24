@@ -7,7 +7,10 @@ import { Brush, Eraser, Palette } from "lucide-react";
 import { drawingToolAtom } from "@/stores/sketchStore";
 import { useState } from "react";
 
-const BRUSH_SIZES = [1, 3, 5, 10, 15, 20, 30];
+const BRUSH_SIZES = [
+  1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 17, 20, 25, 30, 40, 50, 60, 70, 80, 90,
+  100, 120, 150, 170, 200, 250, 300, 400, 500, 600,
+];
 const PRESET_COLORS = [
   "#000000",
   "#FFFFFF",
@@ -78,18 +81,29 @@ export default function DrawingTools() {
           {t("sketch.size")}: {drawingTool.size}px
         </Button>
         {showBrushSizes && (
-          <div className="absolute top-full mt-1 p-2 bg-white border rounded-md shadow-lg z-10">
-            <div className="grid grid-cols-4 gap-1">
+          <div className="absolute top-full mt-1 p-6 bg-white border border-gray-200 rounded-md shadow-lg z-10 w-96">
+            <div className="grid grid-cols-8 gap-x-8 gap-y-4">
               {BRUSH_SIZES.map((size) => (
-                <Button
-                  key={size}
-                  variant={drawingTool.size === size ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => handleSizeChange(size)}
-                  className="w-12 h-8"
-                >
-                  {size}
-                </Button>
+                <div key={size} className="flex flex-col items-center">
+                  <button
+                    onClick={() => handleSizeChange(size)}
+                    className={`w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-gray-100 ${
+                      drawingTool.size === size ? "bg-gray-300" : "bg-gray-50"
+                    }`}
+                    title={`${size}px`}
+                  >
+                    <div
+                      className="bg-gray-600 rounded-full"
+                      style={{
+                        width: `${Math.min(size * 0.8, 32)}px`,
+                        height: `${Math.min(size * 0.8, 32)}px`,
+                      }}
+                    />
+                  </button>
+                  <div className="text-xs text-gray-700 text-center mt-1">
+                    {size}
+                  </div>
+                </div>
               ))}
             </div>
           </div>

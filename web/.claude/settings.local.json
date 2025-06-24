@@ -5,7 +5,6 @@
       "Bash(mkdir:*)",
       "Bash(npm run lint)",
       "Bash(npx tsc:*)",
-      "Bash(npm run dev:*)",
       "Bash(rg:*)",
       "Bash(npm run build:*)",
       "Bash(npx prettier:*)",
@@ -13,7 +12,7 @@
       "Bash(npm run dev:*)",
       "Bash(npm run format:*)"
     ],
-    "deny": ["Bash(git:*)"]
+    "deny": ["Bash(git:*)", "Bash(npm run dev:*)"]
   },
   "preferredNotifChannel": "terminal_bell"
 }

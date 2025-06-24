@@ -21,9 +21,6 @@ This is a Next.js web application with TypeScript, using internationalization (i
 # Install dependencies
 npm install
 
-# Start development server
-npm run dev
-
 # Build for production
 npm run build
 

@@ -187,11 +187,10 @@ export const createLayerAtom = atom(null, (get, set, name: string) => {
   canvas.width = canvasSize.width;
   canvas.height = canvasSize.height;
 
-  // Initialize canvas with white
+  // Initialize canvas with transparent background
   const ctx = canvas.getContext("2d");
   if (ctx) {
-    ctx.fillStyle = "white";
-    ctx.fillRect(0, 0, canvasSize.width, canvasSize.height);
+    // Canvas is transparent by default, no need to fill
   }
 
   const texture = new THREE.CanvasTexture(canvas);
@@ -313,9 +312,7 @@ export const resizeCanvasesAtom = atom(null, (get, set) => {
     const newCtx = newCanvas.getContext("2d");
     if (!newCtx) return layer;
 
-    // Fill with white background
-    newCtx.fillStyle = "white";
-    newCtx.fillRect(0, 0, newCanvasSize.width, newCanvasSize.height);
+    // Keep transparent background, no fill needed
 
     // Scale and draw the old content onto the new canvas
     // Create temporary canvas for scaling the image data

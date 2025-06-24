@@ -224,8 +224,7 @@ export default function SketchCanvas() {
 
         // Draw initial point
         if (drawingTool.type === "eraser") {
-          ctx.globalCompositeOperation = "source-over";
-          ctx.fillStyle = "white";
+          ctx.globalCompositeOperation = "destination-out";
           ctx.globalAlpha = 1;
         } else {
           ctx.globalCompositeOperation = "source-over";
@@ -249,8 +248,7 @@ export default function SketchCanvas() {
 
         // Draw line
         if (drawingTool.type === "eraser") {
-          ctx.globalCompositeOperation = "source-over";
-          ctx.strokeStyle = "white";
+          ctx.globalCompositeOperation = "destination-out";
           ctx.globalAlpha = 1;
         } else {
           ctx.globalCompositeOperation = "source-over";

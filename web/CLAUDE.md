@@ -51,3 +51,4 @@ npx tsc --noEmit
 - Use Tailwind CSS for styling
 - Support both English and Japanese locales
 - All comments in source code must be written in English
+- NEVER use `console.log()` statements for debugging - remove all debug logging before completing tasks

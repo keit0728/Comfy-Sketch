@@ -51,7 +51,6 @@ function LayerPlane({ layer, isActive, onDraw }: LayerPlaneProps) {
       position={[0, 0, layer.zIndex * 0.001]}
       onPointerDown={handlePointerEvent}
       onPointerMove={handlePointerEvent}
-      onPointerUp={handlePointerEvent}
     >
       <planeGeometry args={[8, 6]} />
       <meshBasicMaterial
@@ -72,6 +71,75 @@ export default function SketchCanvas() {
   const [canvasSize] = useAtom(canvasSizeAtom);
 
   const activeLayer = layers.find(layer => layer.id === activeLayerId);
+  
+  // Use refs to track drawing state immediately without waiting for React state updates
+  const isDrawingRef = useRef(false);
+  const lastPointRef = useRef<{ x: number; y: number } | null>(null);
+  const currentTargetRef = useRef<Element | null>(null);
+
+  // Sync refs with state
+  useEffect(() => {
+    isDrawingRef.current = drawingState.isDrawing;
+    lastPointRef.current = drawingState.lastPoint;
+  }, [drawingState]);
+
+  // Robust drawing state management with refs
+  const stopDrawing = useCallback(() => {
+    if (isDrawingRef.current) {
+      console.log('Stopping drawing - resetting state');
+      isDrawingRef.current = false;
+      lastPointRef.current = null;
+      setDrawingState({ isDrawing: false, lastPoint: null });
+      
+      // Release pointer capture if active
+      if (currentTargetRef.current && 'releasePointerCapture' in currentTargetRef.current) {
+        try {
+          (currentTargetRef.current as HTMLElement).releasePointerCapture(-1);
+        } catch {
+          // Ignore errors - pointer might already be released
+        }
+      }
+      currentTargetRef.current = null;
+    }
+  }, [setDrawingState]);
+
+  // Global event listeners for robust pointer event handling
+  useEffect(() => {
+    const handleGlobalPointerUp = () => {
+      console.log('Global pointerup event');
+      stopDrawing();
+    };
+
+    const handleGlobalPointerCancel = () => {
+      console.log('Global pointercancel event');
+      stopDrawing();
+    };
+
+    // Also handle mouse events as fallback
+    const handleGlobalMouseUp = () => {
+      console.log('Global mouseup event');
+      stopDrawing();
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        console.log('Page hidden - stopping drawing');
+        stopDrawing();
+      }
+    };
+
+    document.addEventListener('pointerup', handleGlobalPointerUp, true);
+    document.addEventListener('pointercancel', handleGlobalPointerCancel, true);
+    document.addEventListener('mouseup', handleGlobalMouseUp, true);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('pointerup', handleGlobalPointerUp, true);
+      document.removeEventListener('pointercancel', handleGlobalPointerCancel, true);
+      document.removeEventListener('mouseup', handleGlobalMouseUp, true);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [stopDrawing]);
 
   const handleDraw = useCallback((event: ThreeEvent<PointerEvent>, layer: LayerPlaneProps["layer"]) => {
     if (!layer.canvas || layer.id !== activeLayerId) return;
@@ -80,17 +148,30 @@ export default function SketchCanvas() {
     if (!ctx) return;
 
     // Convert Three.js coordinates to canvas coordinates
-    // PlaneGeometryは[-4, 4] x [-3, 3]の範囲なので、それに合わせて変換
-    // Y coordinate needs to be vertically flipped (difference between Three.js and Canvas2D coordinate systems)
     const x = ((event.point.x + 4) / 8) * canvasSize.width;
     const y = ((event.point.y + 3) / 6) * canvasSize.height;
 
-    console.log(`Event: ${event.type}, Three.js point: (${event.point.x.toFixed(2)}, ${event.point.y.toFixed(2)}), Canvas coords: (${x.toFixed(0)}, ${y.toFixed(0)})`); // For debugging
+    console.log(`Event: ${event.type}, Three.js point: (${event.point.x.toFixed(2)}, ${event.point.y.toFixed(2)}), Canvas coords: (${x.toFixed(0)}, ${y.toFixed(0)}), isDrawing: ${isDrawingRef.current}`);
 
     if (event.type === "pointerdown") {
+      // Set pointer capture to ensure we receive all subsequent events
+      const target = event.nativeEvent.target as Element;
+      if (target && 'setPointerCapture' in target) {
+        try {
+          (target as HTMLElement).setPointerCapture(event.nativeEvent.pointerId);
+          currentTargetRef.current = target;
+          console.log('Pointer capture set');
+        } catch (error) {
+          console.warn('Failed to set pointer capture:', error);
+        }
+      }
+
+      // Update both refs and state immediately
+      isDrawingRef.current = true;
+      lastPointRef.current = { x, y };
       setDrawingState({ isDrawing: true, lastPoint: { x, y } });
       
-      // Draw point
+      // Draw initial point
       if (drawingTool.type === "eraser") {
         ctx.globalCompositeOperation = "source-over";
         ctx.fillStyle = "white";
@@ -107,7 +188,10 @@ export default function SketchCanvas() {
       if (layer.texture) {
         layer.texture.needsUpdate = true;
       }
-    } else if (event.type === "pointermove" && drawingState.isDrawing && drawingState.lastPoint) {
+    } else if (event.type === "pointermove" && isDrawingRef.current && lastPointRef.current) {
+      // Use refs for immediate state access
+      const lastPoint = lastPointRef.current;
+      
       // Draw line
       if (drawingTool.type === "eraser") {
         ctx.globalCompositeOperation = "source-over";
@@ -123,18 +207,20 @@ export default function SketchCanvas() {
       ctx.lineJoin = "round";
       
       ctx.beginPath();
-      ctx.moveTo(drawingState.lastPoint.x, drawingState.lastPoint.y);
+      ctx.moveTo(lastPoint.x, lastPoint.y);
       ctx.lineTo(x, y);
       ctx.stroke();
       
-      setDrawingState({ ...drawingState, lastPoint: { x, y } });
+      // Update refs and state
+      lastPointRef.current = { x, y };
+      setDrawingState(prev => ({ ...prev, lastPoint: { x, y } }));
+      
       if (layer.texture) {
         layer.texture.needsUpdate = true;
       }
-    } else if (event.type === "pointerup") {
-      setDrawingState({ isDrawing: false, lastPoint: null });
     }
-  }, [activeLayerId, drawingTool, drawingState, setDrawingState, canvasSize]);
+    // Remove pointerup handling here - it's now handled by global listeners
+  }, [activeLayerId, drawingTool, setDrawingState, canvasSize]);
 
   return (
     <div className="w-full h-full bg-gray-100 rounded-lg overflow-hidden">
@@ -159,7 +245,6 @@ export default function SketchCanvas() {
             position={[0, 0, -0.001]}
             onPointerDown={(event) => handleDraw(event, activeLayer)}
             onPointerMove={(event) => handleDraw(event, activeLayer)}
-            onPointerUp={(event) => handleDraw(event, activeLayer)}
           >
             <planeGeometry args={[8, 6]} />
             <meshBasicMaterial transparent opacity={0} />

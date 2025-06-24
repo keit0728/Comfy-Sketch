@@ -51,9 +51,22 @@ export default function SketchControls() {
   const handleExportLayer = () => {
     if (!activeLayer?.canvas) return;
 
+    // Create temporary canvas to flip the image
+    const tempCanvas = document.createElement("canvas");
+    tempCanvas.width = activeLayer.canvas.width;
+    tempCanvas.height = activeLayer.canvas.height;
+    
+    const ctx = tempCanvas.getContext("2d");
+    if (!ctx) return;
+    
+    // Flip vertically to correct Three.js coordinate system
+    ctx.scale(1, -1);
+    ctx.translate(0, -tempCanvas.height);
+    ctx.drawImage(activeLayer.canvas, 0, 0);
+
     const link = document.createElement("a");
     link.download = `${activeLayer.name}.png`;
-    link.href = activeLayer.canvas.toDataURL();
+    link.href = tempCanvas.toDataURL();
     link.click();
   };
 
@@ -65,6 +78,13 @@ export default function SketchControls() {
 
     const ctx = exportCanvas.getContext("2d");
     if (!ctx) return;
+
+    // Save the context state
+    ctx.save();
+
+    // Flip vertically to correct Three.js coordinate system
+    ctx.scale(1, -1);
+    ctx.translate(0, -exportCanvas.height);
 
     // Fill background with white
     ctx.fillStyle = "white";
@@ -81,6 +101,9 @@ export default function SketchControls() {
         ctx.drawImage(layer.canvas, 0, 0);
       }
     });
+
+    // Restore the context state
+    ctx.restore();
 
     // Download
     const link = document.createElement("a");

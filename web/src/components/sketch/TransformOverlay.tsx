@@ -240,24 +240,39 @@ export function TransformOverlay({ containerRef }: TransformOverlayProps) {
           width: `${width}px`,
           height: `${height}px`,
         }}
-        onMouseDown={(e) => handleMouseDown(e, "move")}
+        onMouseDown={(e) => {
+          e.stopPropagation();
+          handleMouseDown(e, "move");
+        }}
       >
         {/* Resize handles - corners only */}
         <div
           className={`${handleStyle} -left-1 -top-1 cursor-nw-resize`}
-          onMouseDown={(e) => handleMouseDown(e, "nw")}
+          onMouseDown={(e) => {
+            e.stopPropagation();
+            handleMouseDown(e, "nw");
+          }}
         />
         <div
           className={`${handleStyle} -right-1 -top-1 cursor-ne-resize`}
-          onMouseDown={(e) => handleMouseDown(e, "ne")}
+          onMouseDown={(e) => {
+            e.stopPropagation();
+            handleMouseDown(e, "ne");
+          }}
         />
         <div
           className={`${handleStyle} -right-1 -bottom-1 cursor-se-resize`}
-          onMouseDown={(e) => handleMouseDown(e, "se")}
+          onMouseDown={(e) => {
+            e.stopPropagation();
+            handleMouseDown(e, "se");
+          }}
         />
         <div
           className={`${handleStyle} -left-1 -bottom-1 cursor-sw-resize`}
-          onMouseDown={(e) => handleMouseDown(e, "sw")}
+          onMouseDown={(e) => {
+            e.stopPropagation();
+            handleMouseDown(e, "sw");
+          }}
         />
       </div>
     </div>

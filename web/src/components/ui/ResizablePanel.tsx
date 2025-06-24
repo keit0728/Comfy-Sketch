@@ -77,7 +77,7 @@ export const ResizablePanel: React.FC<ResizablePanelProps> = ({
 
   return (
     <div
-      className={`${isAbsolute ? 'absolute right-0 top-0 bottom-0' : 'relative'} flex ${className}`}
+      className={`${isAbsolute ? "absolute right-0 top-0 bottom-0" : "relative"} flex ${className}`}
       style={{ width: `${width}px`, flexShrink: 0 }}
     >
       <div

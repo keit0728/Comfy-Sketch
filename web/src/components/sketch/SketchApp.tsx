@@ -14,6 +14,7 @@ import {
   undoAtom,
   redoAtom,
   appModeAtom,
+  selectedLayerIdAtom,
 } from "@/stores/sketchStore";
 
 export default function SketchApp() {
@@ -24,6 +25,7 @@ export default function SketchApp() {
   const redo = useSetAtom(redoAtom);
   const appMode = useAtomValue(appModeAtom);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
+  const setSelectedLayerId = useSetAtom(selectedLayerIdAtom);
 
   // Create initial layer
   useEffect(() => {
@@ -64,7 +66,16 @@ export default function SketchApp() {
       {/* Main area */}
       <div className="flex-1 flex overflow-hidden relative">
         {/* Canvas area */}
-        <div className="flex-1 p-4" ref={canvasContainerRef}>
+        <div
+          className="flex-1 p-4"
+          ref={canvasContainerRef}
+          onClick={(e) => {
+            // Deselect layer when clicking on the container background in transform mode
+            if (appMode === "transform" && e.target === e.currentTarget) {
+              setSelectedLayerId(null);
+            }
+          }}
+        >
           <div className="relative w-full h-full">
             <SketchCanvas />
             {appMode === "transform" && (

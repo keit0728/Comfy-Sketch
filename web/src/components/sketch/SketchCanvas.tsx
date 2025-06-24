@@ -46,10 +46,12 @@ function LayerPlane({
   if (!layer.visible || !layer.texture) return null;
 
   const handlePointerEvent = (event: ThreeEvent<PointerEvent>) => {
-    event.stopPropagation();
     if (appMode === "transform" && event.type === "pointerdown") {
+      event.stopPropagation(); // Stop propagation to prevent background deselection
       onSelect?.(layer.id);
     } else if (appMode === "draw" && isActive) {
+      // Stop propagation in draw mode to prevent drawing on background
+      event.stopPropagation();
       onDraw(event, layer);
     }
   };
@@ -91,7 +93,7 @@ export default function SketchCanvas() {
   const canvasSize = useAtomValue(canvasSizeAtom);
   const addToHistory = useSetAtom(addToHistoryAtom);
   const [cameraBounds, setCameraBounds] = useAtom(cameraBoundsAtom);
-  
+
   // Removed resizeCanvases as canvas size is now fixed
   const appMode = useAtomValue(appModeAtom);
   const setSelectedLayerId = useSetAtom(selectedLayerIdAtom);
@@ -322,7 +324,6 @@ export default function SketchCanvas() {
         return;
       }
 
-
       const aspectRatio = rect.width / rect.height;
       const baseHeight = 6; // Keep height constant
       const baseWidth = baseHeight * aspectRatio;
@@ -378,7 +379,7 @@ export default function SketchCanvas() {
         updateCameraBounds();
       }, 50); // Reduced to 50ms for faster response
     });
-    
+
     if (canvasContainerRef.current) {
       resizeObserver.observe(canvasContainerRef.current);
     }
@@ -419,7 +420,7 @@ export default function SketchCanvas() {
         )}
         // Allow default resize behavior
         resize={{ debounce: { scroll: 50, resize: 100 } }}
-        gl={{ 
+        gl={{
           preserveDrawingBuffer: true,
           antialias: true,
           alpha: true,
@@ -435,6 +436,21 @@ export default function SketchCanvas() {
             onPointerMove={(event) => handleDraw(event, activeLayer)}
           >
             <planeGeometry args={[cameraBounds.width, cameraBounds.height]} />
+            <meshBasicMaterial transparent opacity={0} />
+          </mesh>
+        )}
+
+        {/* Background plane for deselecting layers in transform mode */}
+        {appMode === "transform" && (
+          <mesh
+            position={[0, 0, -0.002]}
+            onPointerDown={() => {
+              setSelectedLayerId(null);
+            }}
+          >
+            <planeGeometry
+              args={[cameraBounds.width * 2, cameraBounds.height * 2]}
+            />
             <meshBasicMaterial transparent opacity={0} />
           </mesh>
         )}

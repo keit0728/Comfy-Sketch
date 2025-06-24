@@ -1,0 +1,31 @@
+{
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnPaste": false,
+  "editor.formatOnSave": true,
+  "cSpell.words": [
+    "aicore",
+    "animecreator",
+    "Anonymouse",
+    "cloudflarestorage",
+    "cursorrules",
+    "dbgenerated",
+    "directorystructure",
+    "dropzone",
+    "eventsource",
+    "inbetween",
+    "jotai",
+    "lucide",
+    "navigations",
+    "nextjs",
+    "presign",
+    "presigns",
+    "shadcn",
+    "technologystack",
+    "Timestamptz",
+    "Toastify",
+    "turbopack",
+    "vercel",
+    "WEBP"
+  ],
+  "editor.tabSize": 2
+}

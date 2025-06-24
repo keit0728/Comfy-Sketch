@@ -23,8 +23,6 @@ export default function SketchApp() {
   useEffect(() => {
     if (layers.length === 0) {
       createLayer("レイヤー 1");
-    } else {
-      console.log(`Layers count: ${layers.length}`);
     }
   }, [layers.length, createLayer]);
 
@@ -32,10 +30,10 @@ export default function SketchApp() {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.ctrlKey || event.metaKey) {
-        if (event.key === "z" && !event.shiftKey) {
+        if (event.key.toLowerCase() === "z" && !event.shiftKey) {
           event.preventDefault();
           undo();
-        } else if ((event.key === "z" && event.shiftKey) || event.key === "y") {
+        } else if ((event.key.toLowerCase() === "z" && event.shiftKey) || event.key === "y") {
           event.preventDefault();
           redo();
         }

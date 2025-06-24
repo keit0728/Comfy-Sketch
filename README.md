@@ -4,7 +4,7 @@
 
 Comfy Sketch is an application that lets you rough-out ideas as naturally as doodling in a notebook, then send those sketches straight to ComfyUI for image generation. Whether you're using a pen tablet or a touchscreen, a single click drops your sketch into your ComfyUI workflow—exactly the kind of friction-free creative experience we're aiming for.
 
-## Motivation – Why we built it
+## Motivation – Why did we decide to create this?
 
 [ComfyUI]( https://github.com/comfyanonymous/ComfyUI ) is well-known as a powerful, node-based image-generation app. Its graph interface is wonderfully flexible and highly customizable.
 

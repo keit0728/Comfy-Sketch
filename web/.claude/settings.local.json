@@ -10,6 +10,7 @@
       "Bash(npx prettier:*)",
       "Bash(node:*)",
       "Bash(npm run dev:*)",
+      "Bash(npm run format:*)",
       "Bash(npm run format:*)"
     ],
     "deny": ["Bash(git:*)", "Bash(npm run dev:*)"]

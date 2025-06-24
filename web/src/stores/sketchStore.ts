@@ -60,12 +60,7 @@ export const appModeAtom = atom<AppMode>("draw");
 export const selectedLayerIdAtom = atom<string | null>(null);
 
 // Transform handle being dragged
-export type ResizeHandle =
-  | "nw"
-  | "ne"
-  | "se"
-  | "sw"
-  | "move";
+export type ResizeHandle = "nw" | "ne" | "se" | "sw" | "move";
 export const activeResizeHandleAtom = atom<ResizeHandle | null>(null);
 
 // Mouse position during transform
@@ -80,26 +75,10 @@ export const cameraBoundsAtom = atom({
   height: 6,
 });
 
-// Canvas size - computed based on camera bounds to maintain aspect ratio
-export const canvasSizeAtom = atom((get) => {
-  const bounds = get(cameraBoundsAtom);
-  // Use a higher resolution for better quality
-  const baseResolution = 1200; // Base resolution for the longer dimension
-  const aspectRatio = bounds.width / bounds.height;
-
-  // Calculate dimensions maintaining aspect ratio
-  let width, height;
-  if (aspectRatio >= 1) {
-    // Landscape or square
-    width = baseResolution;
-    height = Math.round(baseResolution / aspectRatio);
-  } else {
-    // Portrait
-    width = Math.round(baseResolution * aspectRatio);
-    height = baseResolution;
-  }
-
-  return { width, height };
+// Canvas size - fixed to prevent resizing issues
+export const canvasSizeAtom = atom({
+  width: 1600,
+  height: 1200,
 });
 
 // History management
@@ -316,69 +295,9 @@ export const reorderLayersAtom = atom(
 );
 
 // Resize all canvases when camera bounds change
-export const resizeCanvasesAtom = atom(null, (get, set) => {
-  const layers = get(layersAtom);
-  const newCanvasSize = get(canvasSizeAtom);
-
-  const updatedLayers = layers.map((layer) => {
-    if (!layer.canvas) return layer;
-
-    const oldCanvas = layer.canvas;
-    const oldCtx = oldCanvas.getContext("2d");
-    if (!oldCtx) return layer;
-
-    // Store current canvas content
-    const imageData = oldCtx.getImageData(
-      0,
-      0,
-      oldCanvas.width,
-      oldCanvas.height,
-    );
-
-    // Create new canvas with new dimensions
-    const newCanvas = document.createElement("canvas");
-    newCanvas.width = newCanvasSize.width;
-    newCanvas.height = newCanvasSize.height;
-
-    const newCtx = newCanvas.getContext("2d");
-    if (!newCtx) return layer;
-
-    // Keep transparent background, no fill needed
-
-    // Scale and draw the old content onto the new canvas
-    // Create temporary canvas for scaling the image data
-    const tempCanvas = document.createElement("canvas");
-    tempCanvas.width = oldCanvas.width;
-    tempCanvas.height = oldCanvas.height;
-    const tempCtx = tempCanvas.getContext("2d");
-    if (tempCtx) {
-      tempCtx.putImageData(imageData, 0, 0);
-      newCtx.drawImage(
-        tempCanvas,
-        0,
-        0,
-        oldCanvas.width,
-        oldCanvas.height,
-        0,
-        0,
-        newCanvasSize.width,
-        newCanvasSize.height,
-      );
-    }
-
-    // Update texture
-    const newTexture = new THREE.CanvasTexture(newCanvas);
-    newTexture.needsUpdate = true;
-    newTexture.flipY = false;
-
-    return {
-      ...layer,
-      canvas: newCanvas,
-      texture: newTexture,
-    };
-  });
-
-  set(layersAtom, updatedLayers);
+export const resizeCanvasesAtom = atom(null, () => {
+  // This function is now a no-op to prevent canvas resizing issues
+  // Canvas size is fixed to prevent content loss during layout changes
 });
 
 // Update layer transform

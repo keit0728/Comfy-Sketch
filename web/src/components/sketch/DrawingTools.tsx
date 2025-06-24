@@ -4,7 +4,12 @@ import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Brush, Eraser, Move } from "lucide-react";
-import { drawingToolAtom, appModeAtom, activeLayerIdAtom, selectedLayerIdAtom } from "@/stores/sketchStore";
+import {
+  drawingToolAtom,
+  appModeAtom,
+  activeLayerIdAtom,
+  selectedLayerIdAtom,
+} from "@/stores/sketchStore";
 import { useState } from "react";
 
 const BRUSH_SIZES = [

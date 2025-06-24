@@ -62,7 +62,7 @@ export default function SketchApp() {
       </div>
 
       {/* Main area */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden relative">
         {/* Canvas area */}
         <div className="flex-1 p-4" ref={canvasContainerRef}>
           <div className="relative w-full h-full">

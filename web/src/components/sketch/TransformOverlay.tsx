@@ -99,59 +99,81 @@ export function TransformOverlay({ containerRef }: TransformOverlayProps) {
           break;
         case "se":
           // Calculate scale based on the dominant axis movement
-          const scaleXSE = (transformStartBounds.width + worldDeltaX) / transformStartBounds.width;
-          const scaleYSE = (transformStartBounds.height - worldDeltaY) / transformStartBounds.height;
-          
+          const scaleXSE =
+            (transformStartBounds.width + worldDeltaX) /
+            transformStartBounds.width;
+          const scaleYSE =
+            (transformStartBounds.height - worldDeltaY) /
+            transformStartBounds.height;
+
           // Use the larger scale to maintain aspect ratio
           const scaleSE = Math.max(0.1, Math.max(scaleXSE, scaleYSE));
-          
+
           newTransform.width = transformStartBounds.width * scaleSE;
           newTransform.height = transformStartBounds.height * scaleSE;
-          
+
           // Adjust Y position for bottom edge movement
-          newTransform.y = transformStartBounds.y + transformStartBounds.height - newTransform.height;
+          newTransform.y =
+            transformStartBounds.y +
+            transformStartBounds.height -
+            newTransform.height;
           break;
         case "sw":
           // Calculate scale based on the dominant axis movement
-          const scaleXSW = (transformStartBounds.width - worldDeltaX) / transformStartBounds.width;
-          const scaleYSW = (transformStartBounds.height - worldDeltaY) / transformStartBounds.height;
-          
+          const scaleXSW =
+            (transformStartBounds.width - worldDeltaX) /
+            transformStartBounds.width;
+          const scaleYSW =
+            (transformStartBounds.height - worldDeltaY) /
+            transformStartBounds.height;
+
           // Use the larger scale to maintain aspect ratio
           const scaleSW = Math.max(0.1, Math.max(scaleXSW, scaleYSW));
-          
+
           const newWidthSW = transformStartBounds.width * scaleSW;
           const newHeightSW = transformStartBounds.height * scaleSW;
-          
+
           // Adjust positions
-          newTransform.x = transformStartBounds.x + transformStartBounds.width - newWidthSW;
-          newTransform.y = transformStartBounds.y + transformStartBounds.height - newHeightSW;
+          newTransform.x =
+            transformStartBounds.x + transformStartBounds.width - newWidthSW;
+          newTransform.y =
+            transformStartBounds.y + transformStartBounds.height - newHeightSW;
           newTransform.width = newWidthSW;
           newTransform.height = newHeightSW;
           break;
         case "ne":
           // Calculate scale based on the dominant axis movement
-          const scaleXNE = (transformStartBounds.width + worldDeltaX) / transformStartBounds.width;
-          const scaleYNE = (transformStartBounds.height + worldDeltaY) / transformStartBounds.height;
-          
+          const scaleXNE =
+            (transformStartBounds.width + worldDeltaX) /
+            transformStartBounds.width;
+          const scaleYNE =
+            (transformStartBounds.height + worldDeltaY) /
+            transformStartBounds.height;
+
           // Use the larger scale to maintain aspect ratio
           const scaleNE = Math.max(0.1, Math.max(scaleXNE, scaleYNE));
-          
+
           newTransform.width = transformStartBounds.width * scaleNE;
           newTransform.height = transformStartBounds.height * scaleNE;
           break;
         case "nw":
           // Calculate scale based on the dominant axis movement
-          const scaleXNW = (transformStartBounds.width - worldDeltaX) / transformStartBounds.width;
-          const scaleYNW = (transformStartBounds.height + worldDeltaY) / transformStartBounds.height;
-          
+          const scaleXNW =
+            (transformStartBounds.width - worldDeltaX) /
+            transformStartBounds.width;
+          const scaleYNW =
+            (transformStartBounds.height + worldDeltaY) /
+            transformStartBounds.height;
+
           // Use the larger scale to maintain aspect ratio
           const scaleNW = Math.max(0.1, Math.max(scaleXNW, scaleYNW));
-          
+
           const newWidthNW = transformStartBounds.width * scaleNW;
           const newHeightNW = transformStartBounds.height * scaleNW;
-          
+
           // Adjust X position for left edge movement
-          newTransform.x = transformStartBounds.x + transformStartBounds.width - newWidthNW;
+          newTransform.x =
+            transformStartBounds.x + transformStartBounds.width - newWidthNW;
           newTransform.width = newWidthNW;
           newTransform.height = newHeightNW;
           break;

@@ -58,11 +58,13 @@ npm run format
 When using Jotai for state management, follow these guidelines for proper hook usage:
 
 - **useAtom**: Use when you need both the value and setter function
+
   ```typescript
   const [value, setValue] = useAtom(myAtom);
   ```
 
 - **useAtomValue**: Use when you only need to read the value (read-only access)
+
   ```typescript
   const value = useAtomValue(myAtom);
   ```

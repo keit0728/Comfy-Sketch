@@ -12,7 +12,6 @@ import {
   canvasSizeAtom,
   addToHistoryAtom,
   cameraBoundsAtom,
-  resizeCanvasesAtom,
   appModeAtom,
   selectedLayerIdAtom,
   type Layer,
@@ -92,7 +91,8 @@ export default function SketchCanvas() {
   const canvasSize = useAtomValue(canvasSizeAtom);
   const addToHistory = useSetAtom(addToHistoryAtom);
   const [cameraBounds, setCameraBounds] = useAtom(cameraBoundsAtom);
-  const resizeCanvases = useSetAtom(resizeCanvasesAtom);
+  
+  // Removed resizeCanvases as canvas size is now fixed
   const appMode = useAtomValue(appModeAtom);
   const setSelectedLayerId = useSetAtom(selectedLayerIdAtom);
 
@@ -219,15 +219,20 @@ export default function SketchCanvas() {
       const localY = (event.point.y - transform.y) / transform.scale;
 
       // Normalize to layer bounds [-0.5, 0.5] then to [0, 1]
-      const normalizedX = (localX / transform.width) + 0.5;
-      const normalizedY = (localY / transform.height) + 0.5;
+      const normalizedX = localX / transform.width + 0.5;
+      const normalizedY = localY / transform.height + 0.5;
 
       // Map to canvas coordinates
       const x = normalizedX * canvasSize.width;
       const y = normalizedY * canvasSize.height;
 
       // Check if the point is within the layer bounds
-      if (normalizedX < 0 || normalizedX > 1 || normalizedY < 0 || normalizedY > 1) {
+      if (
+        normalizedX < 0 ||
+        normalizedX > 1 ||
+        normalizedY < 0 ||
+        normalizedY > 1
+      ) {
         return;
       }
 
@@ -317,35 +322,37 @@ export default function SketchCanvas() {
         return;
       }
 
+
       const aspectRatio = rect.width / rect.height;
       const baseHeight = 6; // Keep height constant
       const baseWidth = baseHeight * aspectRatio;
 
       const newBounds = { width: baseWidth, height: baseHeight };
 
-      // Only update if bounds actually changed to avoid unnecessary canvas resizing
-      if (
-        Math.abs(cameraBounds.width - newBounds.width) > 0.1 ||
-        Math.abs(cameraBounds.height - newBounds.height) > 0.1
-      ) {
-        setCameraBounds(newBounds);
+      // Only update camera projection without changing canvas bounds
+      if (cameraRef.current) {
+        const currentCam = cameraRef.current;
+        const needsUpdate =
+          Math.abs(currentCam.left - -baseWidth / 2) > 0.01 ||
+          Math.abs(currentCam.right - baseWidth / 2) > 0.01 ||
+          Math.abs(currentCam.top - baseHeight / 2) > 0.01 ||
+          Math.abs(currentCam.bottom - -baseHeight / 2) > 0.01;
 
-        // Update camera if available
-        if (cameraRef.current) {
-          cameraRef.current.left = -baseWidth / 2;
-          cameraRef.current.right = baseWidth / 2;
-          cameraRef.current.top = baseHeight / 2;
-          cameraRef.current.bottom = -baseHeight / 2;
-          cameraRef.current.updateProjectionMatrix();
+        if (needsUpdate) {
+          currentCam.left = -baseWidth / 2;
+          currentCam.right = baseWidth / 2;
+          currentCam.top = baseHeight / 2;
+          currentCam.bottom = -baseHeight / 2;
+          currentCam.updateProjectionMatrix();
+
+          // Update camera bounds for coordinate calculations only
+          setCameraBounds(newBounds);
         }
       }
     }
-  }, [cameraBounds, setCameraBounds]);
+  }, [setCameraBounds]);
 
-  // Resize canvases when camera bounds change
-  useEffect(() => {
-    resizeCanvases();
-  }, [cameraBounds.width, cameraBounds.height, resizeCanvases]);
+  // Removed resize canvases effect to prevent canvas content loss
 
   // Initial bounds setup and container resize listener
   useEffect(() => {
@@ -363,13 +370,22 @@ export default function SketchCanvas() {
     // Fallback with timeout
     const timeoutId = setTimeout(initialUpdate, 100);
 
-    const resizeObserver = new ResizeObserver(updateCameraBounds);
+    // Debounced resize observer to prevent frequent updates
+    let resizeTimeout: NodeJS.Timeout;
+    const resizeObserver = new ResizeObserver(() => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        updateCameraBounds();
+      }, 50); // Reduced to 50ms for faster response
+    });
+    
     if (canvasContainerRef.current) {
       resizeObserver.observe(canvasContainerRef.current);
     }
 
     return () => {
       clearTimeout(timeoutId);
+      clearTimeout(resizeTimeout);
       resizeObserver.disconnect();
     };
   }, [updateCameraBounds]);
@@ -389,17 +405,9 @@ export default function SketchCanvas() {
         style={{ width: "100%", height: "100%" }}
         onCreated={useCallback(
           ({ camera }: { camera: THREE.Camera }) => {
-            // Store camera reference and set initial bounds
+            // Store camera reference
             if (camera.type === "OrthographicCamera") {
               cameraRef.current = camera as THREE.OrthographicCamera;
-
-              // Set initial camera bounds based on current cameraBounds state
-              const orthoCam = camera as THREE.OrthographicCamera;
-              orthoCam.left = -cameraBounds.width / 2;
-              orthoCam.right = cameraBounds.width / 2;
-              orthoCam.top = cameraBounds.height / 2;
-              orthoCam.bottom = -cameraBounds.height / 2;
-              orthoCam.updateProjectionMatrix();
             }
 
             // Trigger bounds update after Three.js is fully initialized
@@ -407,11 +415,14 @@ export default function SketchCanvas() {
               updateCameraBounds();
             });
           },
-          [updateCameraBounds, cameraBounds],
+          [updateCameraBounds],
         )}
-        resize={{
-          scroll: false,
-          debounce: { scroll: 50, resize: 50 },
+        // Allow default resize behavior
+        resize={{ debounce: { scroll: 50, resize: 100 } }}
+        gl={{ 
+          preserveDrawingBuffer: true,
+          antialias: true,
+          alpha: true,
         }}
       >
         <ambientLight intensity={1} />

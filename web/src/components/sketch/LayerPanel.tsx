@@ -17,6 +17,7 @@ import {
   selectedLayerIdAtom,
 } from "@/stores/sketchStore";
 import { useState } from "react";
+import { ResizablePanel } from "@/components/ui/ResizablePanel";
 
 interface LayerItemProps {
   layer: {
@@ -199,7 +200,12 @@ export default function LayerPanel() {
   const sortedLayers = [...layers].sort((a, b) => b.zIndex - a.zIndex);
 
   return (
-    <div className="w-64 bg-white border-l border-gray-200 h-full flex flex-col">
+    <ResizablePanel
+      defaultWidth={256}
+      minWidth={200}
+      maxWidth={400}
+      className="bg-white border-l border-gray-200 h-full flex flex-col"
+    >
       <div className="p-4 border-b border-gray-200">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold">{t("sketch.layer")}</h3>
@@ -248,6 +254,6 @@ export default function LayerPanel() {
           ))
         )}
       </div>
-    </div>
+    </ResizablePanel>
   );
 }

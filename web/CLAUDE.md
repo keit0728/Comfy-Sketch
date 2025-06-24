@@ -3,11 +3,12 @@
 This file contains configuration and instructions for Claude Code to work effectively with this project.
 
 ## Project Overview
-This is a Next.js web application with TypeScript, using internationalization (i18n) and component-based architecture.
+This is a Next.js web application with TypeScript, using internationalization (i18n) and component-based architecture. The project allows users to draw in 2D space using Three.js for rendering and canvas manipulation.
 
 ## Technology Stack
 - Next.js with App Router
 - TypeScript
+- Three.js for 2D drawing and canvas rendering
 - Tailwind CSS
 - ESLint
 - Internationalization (i18n) with English and Japanese support

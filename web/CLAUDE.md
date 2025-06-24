@@ -32,6 +32,9 @@ npm run lint
 
 # Run type checking
 npx tsc --noEmit
+
+# Run format
+npm run format
 ```
 
 ## Project Structure

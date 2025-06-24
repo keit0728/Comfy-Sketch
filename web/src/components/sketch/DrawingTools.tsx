@@ -1,6 +1,7 @@
 "use client";
 
 import { useAtom } from "jotai";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Brush, Eraser, Palette } from "lucide-react";
 import { drawingToolAtom } from "@/stores/sketchStore";
@@ -26,6 +27,7 @@ const PRESET_COLORS = [
 ];
 
 export default function DrawingTools() {
+  const t = useTranslations("common");
   const [drawingTool, setDrawingTool] = useAtom(drawingToolAtom);
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [showBrushSizes, setShowBrushSizes] = useState(false);
@@ -50,7 +52,6 @@ export default function DrawingTools() {
 
   return (
     <div className="flex items-center gap-2 p-4 bg-white border-b border-gray-200">
-      {/* ツール選択 */}
       <div className="flex items-center gap-1 mr-4">
         <Button
           variant={drawingTool.type === "brush" ? "default" : "outline"}
@@ -68,14 +69,13 @@ export default function DrawingTools() {
         </Button>
       </div>
 
-      {/* ブラシサイズ */}
       <div className="relative">
         <Button
           variant="outline"
           size="sm"
           onClick={() => setShowBrushSizes(!showBrushSizes)}
         >
-          サイズ: {drawingTool.size}px
+          {t("sketch.size")}: {drawingTool.size}px
         </Button>
         {showBrushSizes && (
           <div className="absolute top-full mt-1 p-2 bg-white border rounded-md shadow-lg z-10">
@@ -96,7 +96,6 @@ export default function DrawingTools() {
         )}
       </div>
 
-      {/* 色選択 */}
       {drawingTool.type === "brush" && (
         <div className="relative">
           <Button
@@ -146,9 +145,8 @@ export default function DrawingTools() {
         </div>
       )}
 
-      {/* 不透明度 */}
       <div className="flex items-center gap-2">
-        <span className="text-sm">不透明度:</span>
+        <span className="text-sm">{t("sketch.opacity")}:</span>
         <input
           type="range"
           min="0.1"
@@ -163,10 +161,9 @@ export default function DrawingTools() {
         </span>
       </div>
 
-      {/* 現在のツール情報 */}
       <div className="ml-auto text-xs text-gray-500">
-        {drawingTool.type === "brush" ? "ブラシ" : "消しゴム"} •
-        {drawingTool.size}px •{Math.round(drawingTool.opacity * 100)}%
+        {drawingTool.type === "brush" ? t("sketch.brush") : t("sketch.eraser")}{" "}
+        •{drawingTool.size}px •{Math.round(drawingTool.opacity * 100)}%
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 "use client";
 
 import { useAtom } from "jotai";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Eye, EyeOff, Plus, Trash2, GripVertical } from "lucide-react";
 import * as THREE from "three";
@@ -144,6 +145,7 @@ function LayerItem({
 }
 
 export default function LayerPanel() {
+  const t = useTranslations("common");
   const [layers] = useAtom(layersAtom);
   const [activeLayerId, setActiveLayerId] = useAtom(activeLayerIdAtom);
   const [, createLayer] = useAtom(createLayerAtom);
@@ -158,7 +160,7 @@ export default function LayerPanel() {
 
   const handleCreateLayer = () => {
     const layerCount = layers.length + 1;
-    createLayer(`レイヤー ${layerCount}`);
+    createLayer(`${t("sketch.layer")} ${layerCount}`);
   };
 
   const handleDeleteLayer = (layerId: string) => {
@@ -192,10 +194,10 @@ export default function LayerPanel() {
     <div className="w-64 bg-white border-l border-gray-200 h-full flex flex-col">
       <div className="p-4 border-b border-gray-200">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold">レイヤー</h3>
+          <h3 className="text-sm font-semibold">{t("sketch.layer")}</h3>
           <Button variant="outline" size="sm" onClick={handleCreateLayer}>
             <Plus className="w-4 h-4 mr-1" />
-            追加
+            {t("sketch.add")}
           </Button>
         </div>
       </div>
@@ -203,14 +205,14 @@ export default function LayerPanel() {
       <div className="flex-1 p-2 space-y-1 overflow-y-auto">
         {sortedLayers.length === 0 ? (
           <div className="text-center text-gray-500 py-8">
-            <p className="text-sm">レイヤーがありません</p>
+            <p className="text-sm">{t("sketch.noLayers")}</p>
             <Button
               variant="outline"
               size="sm"
               className="mt-2"
               onClick={handleCreateLayer}
             >
-              最初のレイヤーを作成
+              {t("sketch.createFirstLayer")}
             </Button>
           </div>
         ) : (

@@ -26,7 +26,7 @@ interface LayerPlaneProps {
   isActive: boolean;
   onDraw: (
     event: ThreeEvent<PointerEvent>,
-    layer: LayerPlaneProps["layer"]
+    layer: LayerPlaneProps["layer"],
   ) => void;
 }
 
@@ -95,7 +95,7 @@ export default function SketchCanvas() {
       // Save drawing completion state to history if actual drawing occurred
       if (wasDrawingRef.current && drawingLayerRef.current) {
         const targetLayer = layers.find(
-          (layer) => layer.id === drawingLayerRef.current
+          (layer) => layer.id === drawingLayerRef.current,
         );
 
         if (targetLayer?.canvas) {
@@ -105,7 +105,7 @@ export default function SketchCanvas() {
               0,
               0,
               targetLayer.canvas.width,
-              targetLayer.canvas.height
+              targetLayer.canvas.height,
             );
             addToHistory(targetLayer.id, imageData);
           }
@@ -165,7 +165,7 @@ export default function SketchCanvas() {
       document.removeEventListener(
         "pointercancel",
         handleGlobalPointerCancel,
-        true
+        true,
       );
       document.removeEventListener("mouseup", handleGlobalMouseUp, true);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
@@ -189,11 +189,11 @@ export default function SketchCanvas() {
         if (target && "setPointerCapture" in target) {
           try {
             (target as HTMLElement).setPointerCapture(
-              event.nativeEvent.pointerId
+              event.nativeEvent.pointerId,
             );
             currentTargetRef.current = target;
-          } catch (error) {
-            console.warn("Failed to set pointer capture:", error);
+          } catch {
+            // Silently handle pointer capture error
           }
         }
 
@@ -258,7 +258,7 @@ export default function SketchCanvas() {
       }
       // Remove pointerup handling here - it's now handled by global listeners
     },
-    [activeLayerId, drawingTool, setDrawingState, canvasSize]
+    [activeLayerId, drawingTool, setDrawingState, canvasSize],
   );
 
   return (

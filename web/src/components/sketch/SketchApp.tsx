@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useAtom } from "jotai";
+import { useTranslations } from "next-intl";
 import SketchCanvas from "./SketchCanvas";
 import LayerPanel from "./LayerPanel";
 import DrawingTools from "./DrawingTools";
@@ -14,6 +15,7 @@ import {
 } from "@/stores/sketchStore";
 
 export default function SketchApp() {
+  const t = useTranslations("common");
   const [layers] = useAtom(layersAtom);
   const [, createLayer] = useAtom(createLayerAtom);
   const [, undo] = useAtom(undoAtom);
@@ -22,9 +24,9 @@ export default function SketchApp() {
   // Create initial layer
   useEffect(() => {
     if (layers.length === 0) {
-      createLayer("レイヤー 1");
+      createLayer(`${t("sketch.layer")} 1`);
     }
-  }, [layers.length, createLayer]);
+  }, [layers.length, createLayer, t]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -33,7 +35,10 @@ export default function SketchApp() {
         if (event.key.toLowerCase() === "z" && !event.shiftKey) {
           event.preventDefault();
           undo();
-        } else if ((event.key.toLowerCase() === "z" && event.shiftKey) || event.key === "y") {
+        } else if (
+          (event.key.toLowerCase() === "z" && event.shiftKey) ||
+          event.key === "y"
+        ) {
           event.preventDefault();
           redo();
         }

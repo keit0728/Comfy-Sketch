@@ -1,6 +1,7 @@
 "use client";
 
 import { useAtom } from "jotai";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Download, Trash2, RotateCcw, RotateCw } from "lucide-react";
 import {
@@ -14,6 +15,7 @@ import {
 } from "@/stores/sketchStore";
 
 export default function SketchControls() {
+  const t = useTranslations("common");
   const [layers] = useAtom(layersAtom);
   const [activeLayerId] = useAtom(activeLayerIdAtom);
   const [, undo] = useAtom(undoAtom);
@@ -34,7 +36,7 @@ export default function SketchControls() {
         0,
         0,
         activeLayer.canvas.width,
-        activeLayer.canvas.height
+        activeLayer.canvas.height,
       );
       addToHistory(activeLayer.id, imageData);
 
@@ -106,7 +108,7 @@ export default function SketchControls() {
         disabled={!canUndo}
       >
         <RotateCcw className="w-4 h-4 mr-1" />
-        元に戻す
+        {t("sketch.undo")}
       </Button>
 
       <Button
@@ -116,7 +118,7 @@ export default function SketchControls() {
         disabled={!canRedo}
       >
         <RotateCw className="w-4 h-4 mr-1" />
-        やり直す
+        {t("sketch.redo")}
       </Button>
 
       <Button
@@ -126,7 +128,7 @@ export default function SketchControls() {
         disabled={!activeLayer}
       >
         <Trash2 className="w-4 h-4 mr-1" />
-        レイヤーをクリア
+        {t("sketch.clearLayer")}
       </Button>
 
       <div className="flex-1" />
@@ -138,7 +140,7 @@ export default function SketchControls() {
         disabled={!activeLayer}
       >
         <Download className="w-4 h-4 mr-1" />
-        レイヤーを保存
+        {t("sketch.exportLayer")}
       </Button>
 
       <Button
@@ -148,7 +150,7 @@ export default function SketchControls() {
         disabled={layers.length === 0}
       >
         <Download className="w-4 h-4 mr-1" />
-        全体を保存
+        {t("sketch.exportAll")}
       </Button>
     </div>
   );

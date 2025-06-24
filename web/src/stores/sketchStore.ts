@@ -71,7 +71,6 @@ export const addToHistoryAtom = atom(
     if (history.length > 0) {
       const lastState = history[history.length - 1];
       if (lastState.layerId === layerId && now - lastState.timestamp < 50) {
-        console.log("Skipping duplicate save (too soon)");
         return;
       }
     }
@@ -97,7 +96,7 @@ export const addToHistoryAtom = atom(
 
     set(historyAtom, newHistory);
     set(currentHistoryIndexAtom, newIndex);
-  }
+  },
 );
 
 export const undoAtom = atom(null, (get, set) => {
@@ -120,8 +119,6 @@ export const undoAtom = atom(null, (get, set) => {
     }
 
     set(currentHistoryIndexAtom, currentIndex - 1);
-  } else {
-    console.log("Cannot undo: at beginning of history");
   }
 });
 
@@ -219,7 +216,7 @@ export const deleteLayerAtom = atom(null, (get, set, layerId: string) => {
   if (activeLayerId === layerId) {
     set(
       activeLayerIdAtom,
-      updatedLayers.length > 0 ? updatedLayers[0].id : null
+      updatedLayers.length > 0 ? updatedLayers[0].id : null,
     );
   }
 });
@@ -229,10 +226,10 @@ export const toggleLayerVisibilityAtom = atom(
   (get, set, layerId: string) => {
     const layers = get(layersAtom);
     const updatedLayers = layers.map((layer) =>
-      layer.id === layerId ? { ...layer, visible: !layer.visible } : layer
+      layer.id === layerId ? { ...layer, visible: !layer.visible } : layer,
     );
     set(layersAtom, updatedLayers);
-  }
+  },
 );
 
 export const updateLayerOpacityAtom = atom(
@@ -240,10 +237,10 @@ export const updateLayerOpacityAtom = atom(
   (get, set, layerId: string, opacity: number) => {
     const layers = get(layersAtom);
     const updatedLayers = layers.map((layer) =>
-      layer.id === layerId ? { ...layer, opacity } : layer
+      layer.id === layerId ? { ...layer, opacity } : layer,
     );
     set(layersAtom, updatedLayers);
-  }
+  },
 );
 
 export const reorderLayersAtom = atom(
@@ -263,5 +260,5 @@ export const reorderLayersAtom = atom(
     }));
 
     set(layersAtom, reindexedLayers);
-  }
+  },
 );

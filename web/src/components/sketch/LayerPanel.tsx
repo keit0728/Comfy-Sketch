@@ -84,7 +84,7 @@ function LayerItem({
         <GripVertical className="w-4 h-4 text-gray-400 cursor-grab active:cursor-grabbing" />
         <span className="text-sm font-medium">{layer.name}</span>
       </div>
-      
+
       <div className="flex items-center gap-1">
         <Button
           variant="ghost"
@@ -100,7 +100,7 @@ function LayerItem({
             <EyeOff className="w-4 h-4" />
           )}
         </Button>
-        
+
         <Button
           variant="ghost"
           size="sm"
@@ -111,7 +111,7 @@ function LayerItem({
         >
           {Math.round(layer.opacity * 100)}%
         </Button>
-        
+
         <Button
           variant="ghost"
           size="sm"
@@ -123,7 +123,7 @@ function LayerItem({
           <Trash2 className="w-4 h-4" />
         </Button>
       </div>
-      
+
       {showOpacitySlider && (
         <div className="absolute right-0 mt-8 p-2 bg-white border rounded-md shadow-lg z-10">
           <input
@@ -132,7 +132,9 @@ function LayerItem({
             max="1"
             step="0.1"
             value={layer.opacity}
-            onChange={(e) => onOpacityChange(layer.id, parseFloat(e.target.value))}
+            onChange={(e) =>
+              onOpacityChange(layer.id, parseFloat(e.target.value))
+            }
             className="w-20"
           />
         </div>
@@ -197,12 +199,17 @@ export default function LayerPanel() {
           </Button>
         </div>
       </div>
-      
+
       <div className="flex-1 p-2 space-y-1 overflow-y-auto">
         {sortedLayers.length === 0 ? (
           <div className="text-center text-gray-500 py-8">
             <p className="text-sm">レイヤーがありません</p>
-            <Button variant="outline" size="sm" className="mt-2" onClick={handleCreateLayer}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-2"
+              onClick={handleCreateLayer}
+            >
               最初のレイヤーを作成
             </Button>
           </div>

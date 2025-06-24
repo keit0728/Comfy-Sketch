@@ -2,20 +2,42 @@
 
 import { useAtom } from "jotai";
 import { Button } from "@/components/ui/button";
-import { Download, Trash2, RotateCcw } from "lucide-react";
-import { layersAtom, activeLayerIdAtom } from "@/stores/sketchStore";
+import { Download, Trash2, RotateCcw, RotateCw } from "lucide-react";
+import {
+  layersAtom,
+  activeLayerIdAtom,
+  undoAtom,
+  redoAtom,
+  canUndoAtom,
+  canRedoAtom,
+  addToHistoryAtom,
+} from "@/stores/sketchStore";
 
 export default function SketchControls() {
   const [layers] = useAtom(layersAtom);
   const [activeLayerId] = useAtom(activeLayerIdAtom);
+  const [, undo] = useAtom(undoAtom);
+  const [, redo] = useAtom(redoAtom);
+  const [canUndo] = useAtom(canUndoAtom);
+  const [canRedo] = useAtom(canRedoAtom);
+  const [, addToHistory] = useAtom(addToHistoryAtom);
 
-  const activeLayer = layers.find(layer => layer.id === activeLayerId);
+  const activeLayer = layers.find((layer) => layer.id === activeLayerId);
 
   const handleClearLayer = () => {
     if (!activeLayer?.canvas) return;
-    
+
     const ctx = activeLayer.canvas.getContext("2d");
     if (ctx) {
+      // Save current state to history before clearing
+      const imageData = ctx.getImageData(
+        0,
+        0,
+        activeLayer.canvas.width,
+        activeLayer.canvas.height
+      );
+      addToHistory(activeLayer.id, imageData);
+
       // Clear the canvas and reinitialize with white background
       ctx.clearRect(0, 0, activeLayer.canvas.width, activeLayer.canvas.height);
       ctx.fillStyle = "white";
@@ -28,7 +50,7 @@ export default function SketchControls() {
 
   const handleExportLayer = () => {
     if (!activeLayer?.canvas) return;
-    
+
     const link = document.createElement("a");
     link.download = `${activeLayer.name}.png`;
     link.href = activeLayer.canvas.toDataURL();
@@ -40,7 +62,7 @@ export default function SketchControls() {
     const exportCanvas = document.createElement("canvas");
     exportCanvas.width = canvasSize.width;
     exportCanvas.height = canvasSize.height;
-    
+
     const ctx = exportCanvas.getContext("2d");
     if (!ctx) return;
 
@@ -50,10 +72,10 @@ export default function SketchControls() {
 
     // Composite layers in zIndex order
     const sortedLayers = [...layers]
-      .filter(layer => layer.visible && layer.canvas)
+      .filter((layer) => layer.visible && layer.canvas)
       .sort((a, b) => a.zIndex - b.zIndex);
 
-    sortedLayers.forEach(layer => {
+    sortedLayers.forEach((layer) => {
       if (layer.canvas) {
         ctx.globalAlpha = layer.opacity;
         ctx.drawImage(layer.canvas, 0, 0);
@@ -68,8 +90,11 @@ export default function SketchControls() {
   };
 
   const handleUndo = () => {
-    // TODO: Implementation of Undo function
-    console.log("Undo function is not implemented");
+    undo();
+  };
+
+  const handleRedo = () => {
+    redo();
   };
 
   return (
@@ -78,10 +103,20 @@ export default function SketchControls() {
         variant="outline"
         size="sm"
         onClick={handleUndo}
-        disabled={true}
+        disabled={!canUndo}
       >
         <RotateCcw className="w-4 h-4 mr-1" />
         元に戻す
+      </Button>
+
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={handleRedo}
+        disabled={!canRedo}
+      >
+        <RotateCw className="w-4 h-4 mr-1" />
+        やり直す
       </Button>
 
       <Button

@@ -8,9 +8,21 @@ import { useState } from "react";
 
 const BRUSH_SIZES = [1, 3, 5, 10, 15, 20, 30];
 const PRESET_COLORS = [
-  "#000000", "#FFFFFF", "#FF0000", "#00FF00", "#0000FF",
-  "#FFFF00", "#FF00FF", "#00FFFF", "#FFA500", "#800080",
-  "#FFC0CB", "#A52A2A", "#808080", "#008000", "#000080",
+  "#000000",
+  "#FFFFFF",
+  "#FF0000",
+  "#00FF00",
+  "#0000FF",
+  "#FFFF00",
+  "#FF00FF",
+  "#00FFFF",
+  "#FFA500",
+  "#800080",
+  "#FFC0CB",
+  "#A52A2A",
+  "#808080",
+  "#008000",
+  "#000080",
 ];
 
 export default function DrawingTools() {
@@ -108,7 +120,8 @@ export default function DrawingTools() {
                     className="w-8 h-8 rounded border-2 hover:scale-110 transition-transform"
                     style={{
                       backgroundColor: color,
-                      borderColor: drawingTool.color === color ? "#3b82f6" : "#d1d5db",
+                      borderColor:
+                        drawingTool.color === color ? "#3b82f6" : "#d1d5db",
                     }}
                     onClick={() => handleColorChange(color)}
                   />
@@ -145,14 +158,15 @@ export default function DrawingTools() {
           onChange={(e) => handleOpacityChange(parseFloat(e.target.value))}
           className="w-20"
         />
-        <span className="text-sm w-8">{Math.round(drawingTool.opacity * 100)}%</span>
+        <span className="text-sm w-8">
+          {Math.round(drawingTool.opacity * 100)}%
+        </span>
       </div>
 
       {/* 現在のツール情報 */}
       <div className="ml-auto text-xs text-gray-500">
-        {drawingTool.type === "brush" ? "ブラシ" : "消しゴム"} • 
-        {drawingTool.size}px • 
-        {Math.round(drawingTool.opacity * 100)}%
+        {drawingTool.type === "brush" ? "ブラシ" : "消しゴム"} •
+        {drawingTool.size}px •{Math.round(drawingTool.opacity * 100)}%
       </div>
     </div>
   );

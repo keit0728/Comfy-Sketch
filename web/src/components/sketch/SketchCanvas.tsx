@@ -10,6 +10,7 @@ import {
   drawingToolAtom,
   drawingStateAtom,
   canvasSizeAtom,
+  addToHistoryAtom,
 } from "@/stores/sketchStore";
 
 interface LayerPlaneProps {
@@ -71,6 +72,7 @@ export default function SketchCanvas() {
   const [drawingTool] = useAtom(drawingToolAtom);
   const [drawingState, setDrawingState] = useAtom(drawingStateAtom);
   const [canvasSize] = useAtom(canvasSizeAtom);
+  const [, addToHistory] = useAtom(addToHistoryAtom);
 
   const activeLayer = layers.find((layer) => layer.id === activeLayerId);
 
@@ -78,6 +80,8 @@ export default function SketchCanvas() {
   const isDrawingRef = useRef(false);
   const lastPointRef = useRef<{ x: number; y: number } | null>(null);
   const currentTargetRef = useRef<Element | null>(null);
+  const wasDrawingRef = useRef(false); // Track if actual drawing occurred
+  const drawingLayerRef = useRef<string | null>(null); // Track which layer was being drawn on
 
   // Sync refs with state
   useEffect(() => {
@@ -88,8 +92,31 @@ export default function SketchCanvas() {
   // Robust drawing state management with refs
   const stopDrawing = useCallback(() => {
     if (isDrawingRef.current) {
+      // Save drawing completion state to history if actual drawing occurred
+      if (wasDrawingRef.current && drawingLayerRef.current) {
+        const targetLayer = layers.find(
+          (layer) => layer.id === drawingLayerRef.current
+        );
+
+        if (targetLayer?.canvas) {
+          const ctx = targetLayer.canvas.getContext("2d");
+          if (ctx) {
+            const imageData = ctx.getImageData(
+              0,
+              0,
+              targetLayer.canvas.width,
+              targetLayer.canvas.height
+            );
+            addToHistory(targetLayer.id, imageData);
+          }
+        }
+      }
+
+      // Reset drawing state
       isDrawingRef.current = false;
       lastPointRef.current = null;
+      wasDrawingRef.current = false;
+      drawingLayerRef.current = null;
       setDrawingState({ isDrawing: false, lastPoint: null });
 
       // Release pointer capture if active
@@ -105,7 +132,7 @@ export default function SketchCanvas() {
       }
       currentTargetRef.current = null;
     }
-  }, [setDrawingState]);
+  }, [setDrawingState, addToHistory, layers]);
 
   // Global event listeners for robust pointer event handling
   useEffect(() => {
@@ -173,6 +200,8 @@ export default function SketchCanvas() {
         // Update both refs and state immediately
         isDrawingRef.current = true;
         lastPointRef.current = { x, y };
+        wasDrawingRef.current = true; // Mark that drawing has started
+        drawingLayerRef.current = layer.id; // Track which layer is being drawn on
         setDrawingState({ isDrawing: true, lastPoint: { x, y } });
 
         // Draw initial point

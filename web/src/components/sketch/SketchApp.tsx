@@ -29,14 +29,14 @@ export default function SketchApp() {
         <SketchControls />
         <DrawingTools />
       </div>
-      
+
       {/* Main area */}
       <div className="flex-1 flex overflow-hidden">
         {/* Canvas area */}
         <div className="flex-1 p-4">
           <SketchCanvas />
         </div>
-        
+
         {/* Layer panel */}
         <LayerPanel />
       </div>

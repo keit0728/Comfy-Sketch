@@ -1,12 +1,17 @@
-import { getTranslations, setRequestLocale } from "next-intl/server";
+import { setRequestLocale } from "next-intl/server";
+import SketchApp from "@/components/sketch/SketchApp";
 
 export default async function HomePage({
   params,
 }: {
   params: Promise<{ locale: string }>;
 }) {
-  const [{ locale }, t] = await Promise.all([params, getTranslations()]);
+  const { locale } = await params;
   setRequestLocale(locale);
 
-  return <div className="">{t("home.title")}</div>;
+  return (
+    <div className="w-full h-screen">
+      <SketchApp />
+    </div>
+  );
 }

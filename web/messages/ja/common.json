@@ -4,5 +4,23 @@
   },
   "Footer": {
     "title": "フッター"
+  },
+  "sketch": {
+    "layer": "レイヤー",
+    "add": "追加",
+    "brush": "ブラシ",
+    "eraser": "消しゴム",
+    "size": "サイズ",
+    "opacity": "不透明度",
+    "color": "色",
+    "undo": "元に戻す",
+    "clear": "クリア",
+    "save": "保存",
+    "export": "エクスポート",
+    "exportLayer": "レイヤーを保存",
+    "exportAll": "全体を保存",
+    "clearLayer": "レイヤーをクリア",
+    "noLayers": "レイヤーがありません",
+    "createFirstLayer": "最初のレイヤーを作成"
   }
 }

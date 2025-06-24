@@ -4,5 +4,23 @@
   },
   "Footer": {
     "title": "Footer"
+  },
+  "sketch": {
+    "layer": "Layer",
+    "add": "Add",
+    "brush": "Brush",
+    "eraser": "Eraser",
+    "size": "Size",
+    "opacity": "Opacity",
+    "color": "Color",
+    "undo": "Undo",
+    "clear": "Clear",
+    "save": "Save",
+    "export": "Export",
+    "exportLayer": "Export Layer",
+    "exportAll": "Export All",
+    "clearLayer": "Clear Layer",
+    "noLayers": "No layers",
+    "createFirstLayer": "Create first layer"
   }
 }

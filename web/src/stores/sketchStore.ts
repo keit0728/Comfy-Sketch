@@ -43,10 +43,32 @@ export const drawingStateAtom = atom<DrawingState>({
   lastPoint: null,
 });
 
-// Canvas size
-export const canvasSizeAtom = atom({
-  width: 800,
-  height: 600,
+// Camera bounds for coordinate system
+export const cameraBoundsAtom = atom({
+  width: 8,
+  height: 6,
+});
+
+// Canvas size - computed based on camera bounds to maintain aspect ratio
+export const canvasSizeAtom = atom((get) => {
+  const bounds = get(cameraBoundsAtom);
+  // Use a higher resolution for better quality
+  const baseResolution = 1200; // Base resolution for the longer dimension
+  const aspectRatio = bounds.width / bounds.height;
+
+  // Calculate dimensions maintaining aspect ratio
+  let width, height;
+  if (aspectRatio >= 1) {
+    // Landscape or square
+    width = baseResolution;
+    height = Math.round(baseResolution / aspectRatio);
+  } else {
+    // Portrait
+    width = Math.round(baseResolution * aspectRatio);
+    height = baseResolution;
+  }
+
+  return { width, height };
 });
 
 // History management
@@ -262,3 +284,71 @@ export const reorderLayersAtom = atom(
     set(layersAtom, reindexedLayers);
   },
 );
+
+// Resize all canvases when camera bounds change
+export const resizeCanvasesAtom = atom(null, (get, set) => {
+  const layers = get(layersAtom);
+  const newCanvasSize = get(canvasSizeAtom);
+
+  const updatedLayers = layers.map((layer) => {
+    if (!layer.canvas) return layer;
+
+    const oldCanvas = layer.canvas;
+    const oldCtx = oldCanvas.getContext("2d");
+    if (!oldCtx) return layer;
+
+    // Store current canvas content
+    const imageData = oldCtx.getImageData(
+      0,
+      0,
+      oldCanvas.width,
+      oldCanvas.height,
+    );
+
+    // Create new canvas with new dimensions
+    const newCanvas = document.createElement("canvas");
+    newCanvas.width = newCanvasSize.width;
+    newCanvas.height = newCanvasSize.height;
+
+    const newCtx = newCanvas.getContext("2d");
+    if (!newCtx) return layer;
+
+    // Fill with white background
+    newCtx.fillStyle = "white";
+    newCtx.fillRect(0, 0, newCanvasSize.width, newCanvasSize.height);
+
+    // Scale and draw the old content onto the new canvas
+    // Create temporary canvas for scaling the image data
+    const tempCanvas = document.createElement("canvas");
+    tempCanvas.width = oldCanvas.width;
+    tempCanvas.height = oldCanvas.height;
+    const tempCtx = tempCanvas.getContext("2d");
+    if (tempCtx) {
+      tempCtx.putImageData(imageData, 0, 0);
+      newCtx.drawImage(
+        tempCanvas,
+        0,
+        0,
+        oldCanvas.width,
+        oldCanvas.height,
+        0,
+        0,
+        newCanvasSize.width,
+        newCanvasSize.height,
+      );
+    }
+
+    // Update texture
+    const newTexture = new THREE.CanvasTexture(newCanvas);
+    newTexture.needsUpdate = true;
+    newTexture.flipY = false;
+
+    return {
+      ...layer,
+      canvas: newCanvas,
+      texture: newTexture,
+    };
+  });
+
+  set(layersAtom, updatedLayers);
+});

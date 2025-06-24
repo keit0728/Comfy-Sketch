@@ -11,6 +11,8 @@ import {
   drawingStateAtom,
   canvasSizeAtom,
   addToHistoryAtom,
+  cameraBoundsAtom,
+  resizeCanvasesAtom,
 } from "@/stores/sketchStore";
 
 interface LayerPlaneProps {
@@ -30,7 +32,12 @@ interface LayerPlaneProps {
   ) => void;
 }
 
-function LayerPlane({ layer, isActive, onDraw }: LayerPlaneProps) {
+function LayerPlane({
+  layer,
+  isActive,
+  onDraw,
+  cameraBounds = { width: 8, height: 6 },
+}: LayerPlaneProps & { cameraBounds?: { width: number; height: number } }) {
   const meshRef = useRef<THREE.Mesh>(null);
 
   useEffect(() => {
@@ -55,7 +62,7 @@ function LayerPlane({ layer, isActive, onDraw }: LayerPlaneProps) {
       onPointerDown={handlePointerEvent}
       onPointerMove={handlePointerEvent}
     >
-      <planeGeometry args={[8, 6]} />
+      <planeGeometry args={[cameraBounds.width, cameraBounds.height]} />
       <meshBasicMaterial
         map={layer.texture}
         transparent
@@ -73,8 +80,13 @@ export default function SketchCanvas() {
   const [drawingState, setDrawingState] = useAtom(drawingStateAtom);
   const [canvasSize] = useAtom(canvasSizeAtom);
   const [, addToHistory] = useAtom(addToHistoryAtom);
+  const [cameraBounds, setCameraBounds] = useAtom(cameraBoundsAtom);
+  const [, resizeCanvases] = useAtom(resizeCanvasesAtom);
 
   const activeLayer = layers.find((layer) => layer.id === activeLayerId);
+
+  const canvasContainerRef = useRef<HTMLDivElement>(null);
+  const cameraRef = useRef<THREE.OrthographicCamera | null>(null);
 
   // Use refs to track drawing state immediately without waiting for React state updates
   const isDrawingRef = useRef(false);
@@ -179,9 +191,15 @@ export default function SketchCanvas() {
       const ctx = layer.canvas.getContext("2d");
       if (!ctx) return;
 
-      // Convert Three.js coordinates to canvas coordinates
-      const x = ((event.point.x + 4) / 8) * canvasSize.width;
-      const y = ((event.point.y + 3) / 6) * canvasSize.height;
+      // Convert Three.js coordinates to canvas coordinates using dynamic camera bounds
+      const bounds = cameraBounds;
+      // Normalize coordinates to [0, 1] range
+      const normalizedX = (event.point.x + bounds.width / 2) / bounds.width;
+      const normalizedY = (event.point.y + bounds.height / 2) / bounds.height; // Don't invert Y - use same coordinate system
+
+      // Map to canvas coordinates
+      const x = normalizedX * canvasSize.width;
+      const y = normalizedY * canvasSize.height;
 
       if (event.type === "pointerdown") {
         // Set pointer capture to ensure we receive all subsequent events
@@ -258,23 +276,115 @@ export default function SketchCanvas() {
       }
       // Remove pointerup handling here - it's now handled by global listeners
     },
-    [activeLayerId, drawingTool, setDrawingState, canvasSize],
+    [activeLayerId, drawingTool, setDrawingState, canvasSize, cameraBounds],
   );
 
+  // Update camera bounds based on container size
+  const updateCameraBounds = useCallback(() => {
+    if (canvasContainerRef.current) {
+      const rect = canvasContainerRef.current.getBoundingClientRect();
+
+      // Skip if container size is not yet available
+      if (rect.width === 0 || rect.height === 0) {
+        return;
+      }
+
+      const aspectRatio = rect.width / rect.height;
+      const baseHeight = 6; // Keep height constant
+      const baseWidth = baseHeight * aspectRatio;
+
+      const newBounds = { width: baseWidth, height: baseHeight };
+
+      // Only update if bounds actually changed to avoid unnecessary canvas resizing
+      if (
+        Math.abs(cameraBounds.width - newBounds.width) > 0.1 ||
+        Math.abs(cameraBounds.height - newBounds.height) > 0.1
+      ) {
+        setCameraBounds(newBounds);
+
+        // Update camera if available
+        if (cameraRef.current) {
+          cameraRef.current.left = -baseWidth / 2;
+          cameraRef.current.right = baseWidth / 2;
+          cameraRef.current.top = baseHeight / 2;
+          cameraRef.current.bottom = -baseHeight / 2;
+          cameraRef.current.updateProjectionMatrix();
+        }
+      }
+    }
+  }, [cameraBounds, setCameraBounds]);
+
+  // Resize canvases when camera bounds change
+  useEffect(() => {
+    resizeCanvases();
+  }, [cameraBounds.width, cameraBounds.height, resizeCanvases]);
+
+  // Initial bounds setup and container resize listener
+  useEffect(() => {
+    // Initial bounds calculation after component mount
+    const initialUpdate = () => {
+      // Use requestAnimationFrame to ensure DOM is fully rendered
+      requestAnimationFrame(() => {
+        updateCameraBounds();
+      });
+    };
+
+    // Immediate attempt
+    initialUpdate();
+
+    // Fallback with timeout
+    const timeoutId = setTimeout(initialUpdate, 100);
+
+    const resizeObserver = new ResizeObserver(updateCameraBounds);
+    if (canvasContainerRef.current) {
+      resizeObserver.observe(canvasContainerRef.current);
+    }
+
+    return () => {
+      clearTimeout(timeoutId);
+      resizeObserver.disconnect();
+    };
+  }, [updateCameraBounds]);
+
   return (
-    <div className="w-full h-full bg-gray-100 rounded-lg overflow-hidden">
+    <div
+      ref={canvasContainerRef}
+      className="w-full h-full bg-gray-100 rounded-lg overflow-hidden"
+    >
       <Canvas
         camera={{
           position: [0, 0, 10],
-          left: -4,
-          right: 4,
-          top: 3,
-          bottom: -3,
           near: 0.1,
           far: 1000,
         }}
         orthographic
         style={{ width: "100%", height: "100%" }}
+        onCreated={useCallback(
+          ({ camera }: { camera: THREE.Camera }) => {
+            // Store camera reference and set initial bounds
+            if (camera.type === "OrthographicCamera") {
+              cameraRef.current = camera as THREE.OrthographicCamera;
+              
+              // Set initial camera bounds based on current cameraBounds state
+              const orthoCam = camera as THREE.OrthographicCamera;
+              orthoCam.left = -cameraBounds.width / 2;
+              orthoCam.right = cameraBounds.width / 2;
+              orthoCam.top = cameraBounds.height / 2;
+              orthoCam.bottom = -cameraBounds.height / 2;
+              orthoCam.updateProjectionMatrix();
+            }
+
+            // Trigger bounds update after Three.js is fully initialized
+            requestAnimationFrame(() => {
+              updateCameraBounds();
+            });
+          },
+          [updateCameraBounds, cameraBounds],
+        )}
+        resize={{
+          scroll: false,
+          debounce: { scroll: 50, resize: 50 },
+        }}
       >
         <ambientLight intensity={1} />
 
@@ -285,7 +395,7 @@ export default function SketchCanvas() {
             onPointerDown={(event) => handleDraw(event, activeLayer)}
             onPointerMove={(event) => handleDraw(event, activeLayer)}
           >
-            <planeGeometry args={[8, 6]} />
+            <planeGeometry args={[cameraBounds.width, cameraBounds.height]} />
             <meshBasicMaterial transparent opacity={0} />
           </mesh>
         )}
@@ -298,6 +408,7 @@ export default function SketchCanvas() {
               layer={layer}
               isActive={false} // Process events with background plane
               onDraw={(event) => handleDraw(event, layer)}
+              cameraBounds={cameraBounds}
             />
           ))}
       </Canvas>

@@ -9,8 +9,11 @@
       "Bash(rg:*)",
       "Bash(npm run build:*)",
       "Bash(npx prettier:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npm run format:*)"
     ],
-    "deny": []
-  }
+    "deny": ["Bash(git:*)"]
+  },
+  "preferredNotifChannel": "terminal_bell"
 }

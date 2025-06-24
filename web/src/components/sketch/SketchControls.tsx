@@ -40,10 +40,8 @@ export default function SketchControls() {
       );
       addToHistory(activeLayer.id, imageData);
 
-      // Clear the canvas and reinitialize with white background
+      // Clear the canvas to transparent
       ctx.clearRect(0, 0, activeLayer.canvas.width, activeLayer.canvas.height);
-      ctx.fillStyle = "white";
-      ctx.fillRect(0, 0, activeLayer.canvas.width, activeLayer.canvas.height);
       if (activeLayer.texture) {
         activeLayer.texture.needsUpdate = true;
       }

@@ -3,7 +3,7 @@
 import { useAtom } from "jotai";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
-import { Brush, Eraser, Palette } from "lucide-react";
+import { Brush, Eraser } from "lucide-react";
 import { drawingToolAtom } from "@/stores/sketchStore";
 import { useState } from "react";
 
@@ -11,28 +11,10 @@ const BRUSH_SIZES = [
   1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 17, 20, 25, 30, 40, 50, 60, 70, 80, 90,
   100, 120, 150, 170, 200, 250, 300, 400, 500, 600,
 ];
-const PRESET_COLORS = [
-  "#000000",
-  "#FFFFFF",
-  "#FF0000",
-  "#00FF00",
-  "#0000FF",
-  "#FFFF00",
-  "#FF00FF",
-  "#00FFFF",
-  "#FFA500",
-  "#800080",
-  "#FFC0CB",
-  "#A52A2A",
-  "#808080",
-  "#008000",
-  "#000080",
-];
 
 export default function DrawingTools() {
   const t = useTranslations("common");
   const [drawingTool, setDrawingTool] = useAtom(drawingToolAtom);
-  const [showColorPicker, setShowColorPicker] = useState(false);
   const [showBrushSizes, setShowBrushSizes] = useState(false);
 
   const handleToolChange = (type: "brush" | "eraser") => {
@@ -44,10 +26,6 @@ export default function DrawingTools() {
     setShowBrushSizes(false);
   };
 
-  const handleColorChange = (color: string) => {
-    setDrawingTool({ ...drawingTool, color });
-    setShowColorPicker(false);
-  };
 
   const handleOpacityChange = (opacity: number) => {
     setDrawingTool({ ...drawingTool, opacity });
@@ -111,51 +89,22 @@ export default function DrawingTools() {
       </div>
 
       {drawingTool.type === "brush" && (
-        <div className="relative">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowColorPicker(!showColorPicker)}
-            className="flex items-center gap-2"
-          >
+        <div className="flex items-center gap-2">
+          <label className="flex items-center gap-2 text-sm">
+            {t("sketch.color")}:
             <div
-              className="w-4 h-4 rounded border"
+              className="w-6 h-6 rounded-full border border-gray-300"
               style={{ backgroundColor: drawingTool.color }}
-            />
-            <Palette className="w-4 h-4" />
-          </Button>
-          {showColorPicker && (
-            <div className="absolute top-full mt-1 p-3 bg-white border rounded-md shadow-lg z-10">
-              <div className="grid grid-cols-5 gap-2 mb-3">
-                {PRESET_COLORS.map((color) => (
-                  <button
-                    key={color}
-                    className="w-8 h-8 rounded border-2 hover:scale-110 transition-transform"
-                    style={{
-                      backgroundColor: color,
-                      borderColor:
-                        drawingTool.color === color ? "#3b82f6" : "#d1d5db",
-                    }}
-                    onClick={() => handleColorChange(color)}
-                  />
-                ))}
-              </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="color"
-                  value={drawingTool.color}
-                  onChange={(e) => handleColorChange(e.target.value)}
-                  className="w-8 h-8 rounded border cursor-pointer"
-                />
-                <input
-                  type="text"
-                  value={drawingTool.color}
-                  onChange={(e) => handleColorChange(e.target.value)}
-                  className="text-xs border rounded px-2 py-1 w-20"
-                />
-              </div>
+            >
+              <input
+                type="color"
+                value={drawingTool.color}
+                onChange={(e) => setDrawingTool({ ...drawingTool, color: e.target.value })}
+                className="w-full h-full cursor-pointer opacity-0"
+              />
             </div>
-          )}
+            <span className="text-xs text-gray-500 font-mono w-16 inline-block">{drawingTool.color}</span>
+          </label>
         </div>
       )}
 

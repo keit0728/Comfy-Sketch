@@ -1,6 +1,6 @@
 "use client";
 
-import { useAtom } from "jotai";
+import { useAtomValue, useSetAtom } from "jotai";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Download, Trash2, RotateCcw, RotateCw } from "lucide-react";
@@ -16,13 +16,13 @@ import {
 
 export default function SketchControls() {
   const t = useTranslations("common");
-  const [layers] = useAtom(layersAtom);
-  const [activeLayerId] = useAtom(activeLayerIdAtom);
-  const [, undo] = useAtom(undoAtom);
-  const [, redo] = useAtom(redoAtom);
-  const [canUndo] = useAtom(canUndoAtom);
-  const [canRedo] = useAtom(canRedoAtom);
-  const [, addToHistory] = useAtom(addToHistoryAtom);
+  const layers = useAtomValue(layersAtom);
+  const activeLayerId = useAtomValue(activeLayerIdAtom);
+  const undo = useSetAtom(undoAtom);
+  const redo = useSetAtom(redoAtom);
+  const canUndo = useAtomValue(canUndoAtom);
+  const canRedo = useAtomValue(canRedoAtom);
+  const addToHistory = useSetAtom(addToHistoryAtom);
 
   const activeLayer = layers.find((layer) => layer.id === activeLayerId);
 

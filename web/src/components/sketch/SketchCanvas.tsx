@@ -1,7 +1,7 @@
 "use client";
 
 import { Canvas, ThreeEvent } from "@react-three/fiber";
-import { useAtom } from "jotai";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { useRef, useCallback, useEffect } from "react";
 import * as THREE from "three";
 import {
@@ -85,16 +85,16 @@ function LayerPlane({
 }
 
 export default function SketchCanvas() {
-  const [layers] = useAtom(layersAtom);
-  const [activeLayerId] = useAtom(activeLayerIdAtom);
-  const [drawingTool] = useAtom(drawingToolAtom);
+  const layers = useAtomValue(layersAtom);
+  const activeLayerId = useAtomValue(activeLayerIdAtom);
+  const drawingTool = useAtomValue(drawingToolAtom);
   const [drawingState, setDrawingState] = useAtom(drawingStateAtom);
-  const [canvasSize] = useAtom(canvasSizeAtom);
-  const [, addToHistory] = useAtom(addToHistoryAtom);
+  const canvasSize = useAtomValue(canvasSizeAtom);
+  const addToHistory = useSetAtom(addToHistoryAtom);
   const [cameraBounds, setCameraBounds] = useAtom(cameraBoundsAtom);
-  const [, resizeCanvases] = useAtom(resizeCanvasesAtom);
-  const [appMode] = useAtom(appModeAtom);
-  const [, setSelectedLayerId] = useAtom(selectedLayerIdAtom);
+  const resizeCanvases = useSetAtom(resizeCanvasesAtom);
+  const appMode = useAtomValue(appModeAtom);
+  const setSelectedLayerId = useSetAtom(selectedLayerIdAtom);
 
   const activeLayer = layers.find((layer) => layer.id === activeLayerId);
 

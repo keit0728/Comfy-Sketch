@@ -148,13 +148,13 @@ function LayerItem({
 
 export default function LayerPanel() {
   const t = useTranslations("common");
-  const [layers] = useAtom(layersAtom);
+  const layers = useAtomValue(layersAtom);
   const [activeLayerId, setActiveLayerId] = useAtom(activeLayerIdAtom);
-  const [, createLayer] = useAtom(createLayerAtom);
-  const [, deleteLayer] = useAtom(deleteLayerAtom);
-  const [, toggleLayerVisibility] = useAtom(toggleLayerVisibilityAtom);
-  const [, updateLayerOpacity] = useAtom(updateLayerOpacityAtom);
-  const [, reorderLayers] = useAtom(reorderLayersAtom);
+  const createLayer = useSetAtom(createLayerAtom);
+  const deleteLayer = useSetAtom(deleteLayerAtom);
+  const toggleLayerVisibility = useSetAtom(toggleLayerVisibilityAtom);
+  const updateLayerOpacity = useSetAtom(updateLayerOpacityAtom);
+  const reorderLayers = useSetAtom(reorderLayersAtom);
   const appMode = useAtomValue(appModeAtom);
   const setSelectedLayerId = useSetAtom(selectedLayerIdAtom);
 

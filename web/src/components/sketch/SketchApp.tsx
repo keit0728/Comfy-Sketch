@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useAtom } from "jotai";
+import { useAtomValue, useSetAtom } from "jotai";
 import { useTranslations } from "next-intl";
 import SketchCanvas from "./SketchCanvas";
 import LayerPanel from "./LayerPanel";
@@ -18,11 +18,11 @@ import {
 
 export default function SketchApp() {
   const t = useTranslations("common");
-  const [layers] = useAtom(layersAtom);
-  const [, createLayer] = useAtom(createLayerAtom);
-  const [, undo] = useAtom(undoAtom);
-  const [, redo] = useAtom(redoAtom);
-  const [appMode] = useAtom(appModeAtom);
+  const layers = useAtomValue(layersAtom);
+  const createLayer = useSetAtom(createLayerAtom);
+  const undo = useSetAtom(undoAtom);
+  const redo = useSetAtom(redoAtom);
+  const appMode = useAtomValue(appModeAtom);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
 
   // Create initial layer

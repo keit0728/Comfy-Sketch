@@ -19,7 +19,7 @@ interface TransformOverlayProps {
 }
 
 export function TransformOverlay({ containerRef }: TransformOverlayProps) {
-  const [selectedLayerId] = useAtom(selectedLayerIdAtom);
+  const selectedLayerId = useAtomValue(selectedLayerIdAtom);
   const [activeHandle, setActiveHandle] = useAtom(activeResizeHandleAtom);
   const [transformStartMouse, setTransformStartMouse] = useAtom(
     transformStartMouseAtom,

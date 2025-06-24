@@ -52,3 +52,24 @@ npm run format
 - Support both English and Japanese locales
 - All comments in source code must be written in English
 - NEVER use `console.log()` statements for debugging - remove all debug logging before completing tasks
+
+## State Management with Jotai
+
+When using Jotai for state management, follow these guidelines for proper hook usage:
+
+- **useAtom**: Use when you need both the value and setter function
+  ```typescript
+  const [value, setValue] = useAtom(myAtom);
+  ```
+
+- **useAtomValue**: Use when you only need to read the value (read-only access)
+  ```typescript
+  const value = useAtomValue(myAtom);
+  ```
+
+- **useSetAtom**: Use when you only need the setter function (write-only access)
+  ```typescript
+  const setValue = useSetAtom(myAtom);
+  ```
+
+Choose the appropriate hook based on your component's needs to optimize performance and prevent unnecessary re-renders.

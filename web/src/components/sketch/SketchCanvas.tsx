@@ -79,18 +79,18 @@ export default function SketchCanvas() {
     const ctx = layer.canvas.getContext("2d");
     if (!ctx) return;
 
-    // Three.jsの座標をキャンバス座標に変換
+    // Convert Three.js coordinates to canvas coordinates
     // PlaneGeometryは[-4, 4] x [-3, 3]の範囲なので、それに合わせて変換
-    // Y座標は上下反転させる必要がある（Three.jsとCanvas2Dの座標系の違い）
+    // Y coordinate needs to be vertically flipped (difference between Three.js and Canvas2D coordinate systems)
     const x = ((event.point.x + 4) / 8) * canvasSize.width;
     const y = ((event.point.y + 3) / 6) * canvasSize.height;
 
-    console.log(`Event: ${event.type}, Three.js point: (${event.point.x.toFixed(2)}, ${event.point.y.toFixed(2)}), Canvas coords: (${x.toFixed(0)}, ${y.toFixed(0)})`); // デバッグ用
+    console.log(`Event: ${event.type}, Three.js point: (${event.point.x.toFixed(2)}, ${event.point.y.toFixed(2)}), Canvas coords: (${x.toFixed(0)}, ${y.toFixed(0)})`); // For debugging
 
     if (event.type === "pointerdown") {
       setDrawingState({ isDrawing: true, lastPoint: { x, y } });
       
-      // 点を描画
+      // Draw point
       if (drawingTool.type === "eraser") {
         ctx.globalCompositeOperation = "source-over";
         ctx.fillStyle = "white";
@@ -108,7 +108,7 @@ export default function SketchCanvas() {
         layer.texture.needsUpdate = true;
       }
     } else if (event.type === "pointermove" && drawingState.isDrawing && drawingState.lastPoint) {
-      // 線を描画
+      // Draw line
       if (drawingTool.type === "eraser") {
         ctx.globalCompositeOperation = "source-over";
         ctx.strokeStyle = "white";
@@ -153,7 +153,7 @@ export default function SketchCanvas() {
       >
         <ambientLight intensity={1} />
         
-        {/* 背景の透明プレーン（クリック検出用） */}
+        {/* Background transparent plane (for click detection) */}
         {activeLayer && (
           <mesh
             position={[0, 0, -0.001]}
@@ -172,7 +172,7 @@ export default function SketchCanvas() {
             <LayerPlane
               key={layer.id}
               layer={layer}
-              isActive={false} // 背景プレーンでイベントを処理するため
+              isActive={false} // Process events with background plane
               onDraw={(event) => handleDraw(event, layer)}
             />
           ))}

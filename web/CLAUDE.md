@@ -44,3 +44,4 @@ npx tsc --noEmit
 - Maintain consistent file naming conventions
 - Use Tailwind CSS for styling
 - Support both English and Japanese locales
+- All comments in source code must be written in English

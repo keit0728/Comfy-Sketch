@@ -128,7 +128,7 @@ export default function LayerPanel() {
     }
   };
 
-  // レイヤーを上位表示順（zIndexが大きい順）でソート
+  // Sort layers in top display order (largest zIndex first)
   const sortedLayers = [...layers].sort((a, b) => b.zIndex - a.zIndex);
 
   return (

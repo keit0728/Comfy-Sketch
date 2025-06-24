@@ -16,7 +16,7 @@ export default function SketchControls() {
     
     const ctx = activeLayer.canvas.getContext("2d");
     if (ctx) {
-      // キャンバスをクリアして白い背景で再初期化
+      // Clear the canvas and reinitialize with white background
       ctx.clearRect(0, 0, activeLayer.canvas.width, activeLayer.canvas.height);
       ctx.fillStyle = "white";
       ctx.fillRect(0, 0, activeLayer.canvas.width, activeLayer.canvas.height);
@@ -44,11 +44,11 @@ export default function SketchControls() {
     const ctx = exportCanvas.getContext("2d");
     if (!ctx) return;
 
-    // 背景を白で塗りつぶし
+    // Fill background with white
     ctx.fillStyle = "white";
     ctx.fillRect(0, 0, canvasSize.width, canvasSize.height);
 
-    // レイヤーをzIndex順に合成
+    // Composite layers in zIndex order
     const sortedLayers = [...layers]
       .filter(layer => layer.visible && layer.canvas)
       .sort((a, b) => a.zIndex - b.zIndex);
@@ -60,7 +60,7 @@ export default function SketchControls() {
       }
     });
 
-    // ダウンロード
+    // Download
     const link = document.createElement("a");
     link.download = "sketch.png";
     link.href = exportCanvas.toDataURL();
@@ -68,8 +68,8 @@ export default function SketchControls() {
   };
 
   const handleUndo = () => {
-    // TODO: Undo機能の実装
-    console.log("Undo機能は未実装です");
+    // TODO: Implementation of Undo function
+    console.log("Undo function is not implemented");
   };
 
   return (

@@ -23,13 +23,13 @@ export interface DrawingState {
   lastPoint: { x: number; y: number } | null;
 }
 
-// レイヤー管理
+// Layer management
 export const layersAtom = atom<Layer[]>([]);
 
-// アクティブレイヤー
+// Active layer
 export const activeLayerIdAtom = atom<string | null>(null);
 
-// 描画ツール
+// Drawing tool
 export const drawingToolAtom = atom<DrawingTool>({
   type: "brush",
   size: 5,
@@ -37,19 +37,19 @@ export const drawingToolAtom = atom<DrawingTool>({
   opacity: 1,
 });
 
-// 描画状態
+// Drawing state
 export const drawingStateAtom = atom<DrawingState>({
   isDrawing: false,
   lastPoint: null,
 });
 
-// キャンバスサイズ
+// Canvas size
 export const canvasSizeAtom = atom({
   width: 800,
   height: 600,
 });
 
-// レイヤー操作のヘルパー関数
+// Helper functions for layer operations
 export const createLayerAtom = atom(
   null,
   (get, set, name: string) => {
@@ -60,7 +60,7 @@ export const createLayerAtom = atom(
     canvas.width = canvasSize.width;
     canvas.height = canvasSize.height;
     
-    // キャンバスを白で初期化
+    // Initialize canvas with white
     const ctx = canvas.getContext("2d");
     if (ctx) {
       ctx.fillStyle = "white";
@@ -69,7 +69,7 @@ export const createLayerAtom = atom(
     
     const texture = new THREE.CanvasTexture(canvas);
     texture.needsUpdate = true;
-    texture.flipY = false; // Three.jsでキャンバステクスチャのY軸反転を無効化
+    texture.flipY = false; // Disable Y-axis flipping of canvas texture in Three.js
     
     const newLayer: Layer = {
       id: `layer-${Date.now()}`,
@@ -135,7 +135,7 @@ export const reorderLayersAtom = atom(
     updatedLayers.splice(dragIndex, 1);
     updatedLayers.splice(hoverIndex, 0, dragLayer);
     
-    // zIndexを更新
+    // Update zIndex
     const reindexedLayers = updatedLayers.map((layer, index) => ({
       ...layer,
       zIndex: index,

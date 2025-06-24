@@ -16,7 +16,10 @@ export default function SketchControls() {
     
     const ctx = activeLayer.canvas.getContext("2d");
     if (ctx) {
+      // キャンバスをクリアして白い背景で再初期化
       ctx.clearRect(0, 0, activeLayer.canvas.width, activeLayer.canvas.height);
+      ctx.fillStyle = "white";
+      ctx.fillRect(0, 0, activeLayer.canvas.width, activeLayer.canvas.height);
       if (activeLayer.texture) {
         activeLayer.texture.needsUpdate = true;
       }

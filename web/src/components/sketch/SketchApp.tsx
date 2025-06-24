@@ -15,7 +15,6 @@ export default function SketchApp() {
   // Create initial layer
   useEffect(() => {
     if (layers.length === 0) {
-      console.log("Creating initial layer...");
       createLayer("レイヤー 1");
     } else {
       console.log(`Layers count: ${layers.length}`);

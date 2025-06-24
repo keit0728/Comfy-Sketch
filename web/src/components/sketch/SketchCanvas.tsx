@@ -88,7 +88,6 @@ export default function SketchCanvas() {
   // Robust drawing state management with refs
   const stopDrawing = useCallback(() => {
     if (isDrawingRef.current) {
-      console.log("Stopping drawing - resetting state");
       isDrawingRef.current = false;
       lastPointRef.current = null;
       setDrawingState({ isDrawing: false, lastPoint: null });
@@ -111,24 +110,20 @@ export default function SketchCanvas() {
   // Global event listeners for robust pointer event handling
   useEffect(() => {
     const handleGlobalPointerUp = () => {
-      console.log("Global pointerup event");
       stopDrawing();
     };
 
     const handleGlobalPointerCancel = () => {
-      console.log("Global pointercancel event");
       stopDrawing();
     };
 
     // Also handle mouse events as fallback
     const handleGlobalMouseUp = () => {
-      console.log("Global mouseup event");
       stopDrawing();
     };
 
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        console.log("Page hidden - stopping drawing");
         stopDrawing();
       }
     };
@@ -170,7 +165,6 @@ export default function SketchCanvas() {
               event.nativeEvent.pointerId
             );
             currentTargetRef.current = target;
-            console.log("Pointer capture set");
           } catch (error) {
             console.warn("Failed to set pointer capture:", error);
           }

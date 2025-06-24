@@ -91,9 +91,15 @@ export default function SketchCanvas() {
       setDrawingState({ isDrawing: true, lastPoint: { x, y } });
       
       // 点を描画
-      ctx.globalCompositeOperation = drawingTool.type === "eraser" ? "destination-out" : "source-over";
-      ctx.fillStyle = drawingTool.color;
-      ctx.globalAlpha = drawingTool.opacity;
+      if (drawingTool.type === "eraser") {
+        ctx.globalCompositeOperation = "source-over";
+        ctx.fillStyle = "white";
+        ctx.globalAlpha = 1;
+      } else {
+        ctx.globalCompositeOperation = "source-over";
+        ctx.fillStyle = drawingTool.color;
+        ctx.globalAlpha = drawingTool.opacity;
+      }
       ctx.beginPath();
       ctx.arc(x, y, drawingTool.size / 2, 0, Math.PI * 2);
       ctx.fill();
@@ -103,12 +109,18 @@ export default function SketchCanvas() {
       }
     } else if (event.type === "pointermove" && drawingState.isDrawing && drawingState.lastPoint) {
       // 線を描画
-      ctx.globalCompositeOperation = drawingTool.type === "eraser" ? "destination-out" : "source-over";
-      ctx.strokeStyle = drawingTool.color;
+      if (drawingTool.type === "eraser") {
+        ctx.globalCompositeOperation = "source-over";
+        ctx.strokeStyle = "white";
+        ctx.globalAlpha = 1;
+      } else {
+        ctx.globalCompositeOperation = "source-over";
+        ctx.strokeStyle = drawingTool.color;
+        ctx.globalAlpha = drawingTool.opacity;
+      }
       ctx.lineWidth = drawingTool.size;
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
-      ctx.globalAlpha = drawingTool.opacity;
       
       ctx.beginPath();
       ctx.moveTo(drawingState.lastPoint.x, drawingState.lastPoint.y);

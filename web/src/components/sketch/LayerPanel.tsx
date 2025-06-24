@@ -11,6 +11,7 @@ import {
   deleteLayerAtom,
   toggleLayerVisibilityAtom,
   updateLayerOpacityAtom,
+  reorderLayersAtom,
 } from "@/stores/sketchStore";
 import { useState } from "react";
 
@@ -25,31 +26,62 @@ interface LayerItemProps {
     texture: THREE.CanvasTexture | null;
   };
   isActive: boolean;
+  index: number;
   onSelect: (layerId: string) => void;
   onToggleVisibility: (layerId: string) => void;
   onDelete: (layerId: string) => void;
   onOpacityChange: (layerId: string, opacity: number) => void;
+  onDragStart: (index: number) => void;
+  onDragOver: (index: number) => void;
+  onDragEnd: () => void;
+  isDragOver: boolean;
 }
 
 function LayerItem({
   layer,
   isActive,
+  index,
   onSelect,
   onToggleVisibility,
   onDelete,
   onOpacityChange,
+  onDragStart,
+  onDragOver,
+  onDragEnd,
+  isDragOver,
 }: LayerItemProps) {
   const [showOpacitySlider, setShowOpacitySlider] = useState(false);
 
+  const handleDragStart = (e: React.DragEvent) => {
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", layer.id);
+    onDragStart(index);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    onDragOver(index);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    onDragEnd();
+  };
+
   return (
     <div
-      className={`flex items-center p-2 rounded-md cursor-pointer hover:bg-gray-100 ${
+      className={`flex items-center p-2 rounded-md cursor-pointer hover:bg-gray-100 transition-colors ${
         isActive ? "bg-blue-100 border border-blue-300" : ""
-      }`}
+      } ${isDragOver ? "bg-yellow-100 border-2 border-yellow-300 border-dashed" : ""}`}
       onClick={() => onSelect(layer.id)}
+      draggable
+      onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
     >
       <div className="flex-1 flex items-center gap-2">
-        <GripVertical className="w-4 h-4 text-gray-400" />
+        <GripVertical className="w-4 h-4 text-gray-400 cursor-grab active:cursor-grabbing" />
         <span className="text-sm font-medium">{layer.name}</span>
       </div>
       
@@ -116,6 +148,11 @@ export default function LayerPanel() {
   const [, deleteLayer] = useAtom(deleteLayerAtom);
   const [, toggleLayerVisibility] = useAtom(toggleLayerVisibilityAtom);
   const [, updateLayerOpacity] = useAtom(updateLayerOpacityAtom);
+  const [, reorderLayers] = useAtom(reorderLayersAtom);
+
+  // Drag and drop state
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   const handleCreateLayer = () => {
     const layerCount = layers.length + 1;
@@ -126,6 +163,24 @@ export default function LayerPanel() {
     if (layers.length > 1) {
       deleteLayer(layerId);
     }
+  };
+
+  const handleDragStart = (index: number) => {
+    setDraggedIndex(index);
+  };
+
+  const handleDragOver = (index: number) => {
+    if (draggedIndex !== null && draggedIndex !== index) {
+      setDragOverIndex(index);
+    }
+  };
+
+  const handleDragEnd = () => {
+    if (draggedIndex !== null && dragOverIndex !== null) {
+      reorderLayers(draggedIndex, dragOverIndex);
+    }
+    setDraggedIndex(null);
+    setDragOverIndex(null);
   };
 
   // Sort layers in top display order (largest zIndex first)
@@ -152,15 +207,20 @@ export default function LayerPanel() {
             </Button>
           </div>
         ) : (
-          sortedLayers.map((layer) => (
+          sortedLayers.map((layer, index) => (
             <LayerItem
               key={layer.id}
               layer={layer}
+              index={index}
               isActive={layer.id === activeLayerId}
               onSelect={setActiveLayerId}
               onToggleVisibility={toggleLayerVisibility}
               onDelete={handleDeleteLayer}
               onOpacityChange={updateLayerOpacity}
+              onDragStart={handleDragStart}
+              onDragOver={handleDragOver}
+              onDragEnd={handleDragEnd}
+              isDragOver={dragOverIndex === index}
             />
           ))
         )}

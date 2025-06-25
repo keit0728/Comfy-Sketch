@@ -1,9 +1,17 @@
 "use client";
 
-import { useAtomValue, useSetAtom } from "jotai";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
-import { Download, Trash2, RotateCcw, RotateCw } from "lucide-react";
+import {
+  Download,
+  Trash2,
+  RotateCcw,
+  RotateCw,
+  ZoomIn,
+  ZoomOut,
+  Maximize2,
+} from "lucide-react";
 import {
   layersAtom,
   activeLayerIdAtom,
@@ -14,6 +22,8 @@ import {
   addToHistoryAtom,
   cameraBoundsAtom,
   canvasSizeAtom,
+  cameraZoomAtom,
+  cameraPositionAtom,
 } from "@/stores/sketchStore";
 
 // Utility function to detect content bounds of a canvas
@@ -70,6 +80,8 @@ export default function SketchControls() {
   const addToHistory = useSetAtom(addToHistoryAtom);
   const cameraBounds = useAtomValue(cameraBoundsAtom);
   const canvasSize = useAtomValue(canvasSizeAtom);
+  const [cameraZoom, setCameraZoom] = useAtom(cameraZoomAtom);
+  const setCameraPosition = useSetAtom(cameraPositionAtom);
 
   const activeLayer = layers.find((layer) => layer.id === activeLayerId);
 
@@ -229,6 +241,19 @@ export default function SketchControls() {
     redo();
   };
 
+  const handleZoomIn = () => {
+    setCameraZoom(Math.min(10, cameraZoom * 1.2));
+  };
+
+  const handleZoomOut = () => {
+    setCameraZoom(Math.max(0.1, cameraZoom / 1.2));
+  };
+
+  const handleResetView = () => {
+    setCameraZoom(1);
+    setCameraPosition({ x: 0, y: 0 });
+  };
+
   return (
     <div className="flex items-center gap-2 p-4 bg-white border-b border-gray-200">
       <Button
@@ -259,6 +284,24 @@ export default function SketchControls() {
       >
         <Trash2 className="w-4 h-4 mr-1" />
         {t("sketch.clearLayer")}
+      </Button>
+
+      <div className="mx-2 border-l border-gray-300 h-8" />
+
+      <Button variant="outline" size="sm" onClick={handleZoomOut}>
+        <ZoomOut className="w-4 h-4" />
+      </Button>
+
+      <span className="text-sm text-gray-600 min-w-[60px] text-center">
+        {Math.round(cameraZoom * 100)}%
+      </span>
+
+      <Button variant="outline" size="sm" onClick={handleZoomIn}>
+        <ZoomIn className="w-4 h-4" />
+      </Button>
+
+      <Button variant="outline" size="sm" onClick={handleResetView}>
+        <Maximize2 className="w-4 h-4" />
       </Button>
 
       <div className="flex-1" />

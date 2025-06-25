@@ -14,6 +14,9 @@ import {
   cameraBoundsAtom,
   appModeAtom,
   selectedLayerIdAtom,
+  cameraPositionAtom,
+  cameraZoomAtom,
+  panStateAtom,
   type Layer,
 } from "@/stores/sketchStore";
 
@@ -73,6 +76,10 @@ function LayerPlane({
       onPointerDown={handlePointerEvent}
       onPointerMove={handlePointerEvent}
       onPointerUp={handlePointerEvent}
+      onWheel={() => {
+        // Don't stop propagation - let wheel events pass through for zooming
+        // This allows the native wheel event listener on the canvas container to handle zoom
+      }}
     >
       <planeGeometry args={[transform.width, transform.height]} />
       <meshBasicMaterial
@@ -93,6 +100,9 @@ export default function SketchCanvas() {
   const canvasSize = useAtomValue(canvasSizeAtom);
   const addToHistory = useSetAtom(addToHistoryAtom);
   const [cameraBounds, setCameraBounds] = useAtom(cameraBoundsAtom);
+  const [cameraPosition, setCameraPosition] = useAtom(cameraPositionAtom);
+  const [cameraZoom, setCameraZoom] = useAtom(cameraZoomAtom);
+  const [panState, setPanState] = useAtom(panStateAtom);
 
   // Removed resizeCanvases as canvas size is now fixed
   const appMode = useAtomValue(appModeAtom);
@@ -199,6 +209,132 @@ export default function SketchCanvas() {
     };
   }, [stopDrawing]);
 
+  // Handle native wheel event for zooming
+  useEffect(() => {
+    const container = canvasContainerRef.current;
+    if (!container) return;
+
+    const handleWheel = (event: WheelEvent) => {
+      // Always prevent default to disable browser zoom and handle all wheel events
+      event.preventDefault();
+      
+      // Block browser zoom with Ctrl/Cmd+wheel completely
+      if (event.ctrlKey || event.metaKey) {
+        return;
+      }
+      
+      // Allow horizontal scrolling with Shift+wheel
+      if (event.shiftKey || event.altKey) {
+        return;
+      }
+
+      // Calculate zoom delta
+      const zoomDelta = event.deltaY > 0 ? 0.9 : 1.1;
+      const newZoom = Math.max(0.1, Math.min(10, cameraZoom * zoomDelta));
+
+      if (newZoom !== cameraZoom) {
+        // Get mouse position relative to canvas
+        const rect = container.getBoundingClientRect();
+        if (!rect) return;
+
+        const mouseX = event.clientX - rect.left;
+        const mouseY = event.clientY - rect.top;
+
+        // Convert to normalized coordinates [0, 1]
+        const normalizedX = mouseX / rect.width;
+        const normalizedY = mouseY / rect.height;
+
+        // Convert to world coordinates before zoom
+        const worldXBefore =
+          ((normalizedX - 0.5) * cameraBounds.width) / cameraZoom -
+          cameraPosition.x;
+        const worldYBefore =
+          ((0.5 - normalizedY) * cameraBounds.height) / cameraZoom -
+          cameraPosition.y;
+
+        // Convert to world coordinates after zoom
+        const worldXAfter =
+          ((normalizedX - 0.5) * cameraBounds.width) / newZoom -
+          cameraPosition.x;
+        const worldYAfter =
+          ((0.5 - normalizedY) * cameraBounds.height) / newZoom -
+          cameraPosition.y;
+
+        // Adjust camera position to keep mouse position fixed
+        const newCameraX = cameraPosition.x + (worldXBefore - worldXAfter);
+        const newCameraY = cameraPosition.y + (worldYBefore - worldYAfter);
+
+        setCameraPosition({ x: newCameraX, y: newCameraY });
+        setCameraZoom(newZoom);
+      }
+    };
+
+    // Add event listener with passive: false to allow preventDefault
+    container.addEventListener("wheel", handleWheel, { passive: false });
+
+    return () => {
+      container.removeEventListener("wheel", handleWheel);
+    };
+  }, [
+    cameraZoom,
+    cameraPosition,
+    cameraBounds,
+    setCameraPosition,
+    setCameraZoom,
+  ]);
+
+  // Handle middle mouse button for panning
+  const handlePointerDown = useCallback(
+    (event: React.PointerEvent) => {
+      // Middle mouse button or Ctrl+Left mouse for panning
+      if (event.button === 1 || (event.button === 0 && event.ctrlKey)) {
+        event.preventDefault();
+        setPanState({
+          isPanning: true,
+          startMouse: { x: event.clientX, y: event.clientY },
+          startCamera: { x: cameraPosition.x, y: cameraPosition.y },
+        });
+      }
+    },
+    [cameraPosition, setPanState],
+  );
+
+  const handlePointerMove = useCallback(
+    (event: React.PointerEvent) => {
+      if (panState.isPanning && panState.startMouse && panState.startCamera) {
+        const rect = canvasContainerRef.current?.getBoundingClientRect();
+        if (!rect) return;
+
+        // Calculate mouse delta in pixels
+        const deltaX = event.clientX - panState.startMouse.x;
+        const deltaY = event.clientY - panState.startMouse.y;
+
+        // Convert to world space delta
+        const worldDeltaX =
+          (-(deltaX / rect.width) * cameraBounds.width) / cameraZoom;
+        const worldDeltaY =
+          ((deltaY / rect.height) * cameraBounds.height) / cameraZoom;
+
+        // Update camera position
+        setCameraPosition({
+          x: panState.startCamera.x + worldDeltaX,
+          y: panState.startCamera.y + worldDeltaY,
+        });
+      }
+    },
+    [panState, cameraBounds, cameraZoom, setCameraPosition],
+  );
+
+  const handlePointerUp = useCallback(() => {
+    if (panState.isPanning) {
+      setPanState({
+        isPanning: false,
+        startMouse: null,
+        startCamera: null,
+      });
+    }
+  }, [panState.isPanning, setPanState]);
+
   const handleDraw = useCallback(
     (event: ThreeEvent<PointerEvent>, layer: Layer) => {
       if (!layer.canvas || layer.id !== activeLayerId) return;
@@ -215,10 +351,15 @@ export default function SketchCanvas() {
         scale: 1,
       };
 
+      // Convert Three.js world coordinates to camera-relative world coordinates
+      // Account for camera position and zoom
+      const cameraRelativeX = event.point.x * cameraZoom + cameraPosition.x;
+      const cameraRelativeY = event.point.y * cameraZoom + cameraPosition.y;
+
       // Convert world coordinates to layer-local coordinates
       // Account for scale transform
-      const localX = (event.point.x - transform.x) / transform.scale;
-      const localY = (event.point.y - transform.y) / transform.scale;
+      const localX = (cameraRelativeX - transform.x) / transform.scale;
+      const localY = (cameraRelativeY - transform.y) / transform.scale;
 
       // Normalize to layer bounds [-0.5, 0.5] then to [0, 1]
       const normalizedX = localX / transform.width + 0.5;
@@ -311,10 +452,18 @@ export default function SketchCanvas() {
       }
       // Remove pointerup handling here - it's now handled by global listeners
     },
-    [activeLayerId, drawingTool, setDrawingState, canvasSize, cameraBounds],
+    [
+      activeLayerId,
+      drawingTool,
+      setDrawingState,
+      canvasSize,
+      cameraBounds,
+      cameraZoom,
+      cameraPosition,
+    ],
   );
 
-  // Update camera bounds based on container size
+  // Update camera bounds based on container size and apply zoom/pan
   const updateCameraBounds = useCallback(() => {
     if (canvasContainerRef.current) {
       const rect = canvasContainerRef.current.getBoundingClientRect();
@@ -330,28 +479,26 @@ export default function SketchCanvas() {
 
       const newBounds = { width: baseWidth, height: baseHeight };
 
-      // Only update camera projection without changing canvas bounds
+      // Update camera projection with zoom and pan
       if (cameraRef.current) {
         const currentCam = cameraRef.current;
-        const needsUpdate =
-          Math.abs(currentCam.left - -baseWidth / 2) > 0.01 ||
-          Math.abs(currentCam.right - baseWidth / 2) > 0.01 ||
-          Math.abs(currentCam.top - baseHeight / 2) > 0.01 ||
-          Math.abs(currentCam.bottom - -baseHeight / 2) > 0.01;
 
-        if (needsUpdate) {
-          currentCam.left = -baseWidth / 2;
-          currentCam.right = baseWidth / 2;
-          currentCam.top = baseHeight / 2;
-          currentCam.bottom = -baseHeight / 2;
-          currentCam.updateProjectionMatrix();
+        // Apply zoom to the camera bounds
+        const zoomedWidth = baseWidth / cameraZoom;
+        const zoomedHeight = baseHeight / cameraZoom;
 
-          // Update camera bounds for coordinate calculations only
-          setCameraBounds(newBounds);
-        }
+        // Apply pan offset
+        currentCam.left = -zoomedWidth / 2 + cameraPosition.x;
+        currentCam.right = zoomedWidth / 2 + cameraPosition.x;
+        currentCam.top = zoomedHeight / 2 + cameraPosition.y;
+        currentCam.bottom = -zoomedHeight / 2 + cameraPosition.y;
+        currentCam.updateProjectionMatrix();
+
+        // Update camera bounds for coordinate calculations only
+        setCameraBounds(newBounds);
       }
     }
-  }, [setCameraBounds]);
+  }, [setCameraBounds, cameraZoom, cameraPosition]);
 
   // Removed resize canvases effect to prevent canvas content loss
 
@@ -391,10 +538,25 @@ export default function SketchCanvas() {
     };
   }, [updateCameraBounds]);
 
+  // Update camera when zoom or position changes
+  useEffect(() => {
+    updateCameraBounds();
+  }, [cameraZoom, cameraPosition, updateCameraBounds]);
+
   return (
     <div
       ref={canvasContainerRef}
       className="w-full h-full bg-gray-100 rounded-lg overflow-hidden"
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      style={{
+        cursor: panState.isPanning
+          ? "grabbing"
+          : appMode === "draw"
+            ? "crosshair"
+            : "grab",
+      }}
     >
       <Canvas
         camera={{
@@ -431,11 +593,16 @@ export default function SketchCanvas() {
         {/* Background transparent plane (for click detection) */}
         {activeLayer && appMode === "draw" && (
           <mesh
-            position={[0, 0, -0.001]}
+            position={[cameraPosition.x, cameraPosition.y, -0.001]}
             onPointerDown={(event) => handleDraw(event, activeLayer)}
             onPointerMove={(event) => handleDraw(event, activeLayer)}
           >
-            <planeGeometry args={[cameraBounds.width, cameraBounds.height]} />
+            <planeGeometry
+              args={[
+                cameraBounds.width / cameraZoom,
+                cameraBounds.height / cameraZoom,
+              ]}
+            />
             <meshBasicMaterial transparent opacity={0} />
           </mesh>
         )}
@@ -443,13 +610,16 @@ export default function SketchCanvas() {
         {/* Background plane for deselecting layers in transform mode */}
         {appMode === "transform" && (
           <mesh
-            position={[0, 0, -0.002]}
+            position={[cameraPosition.x, cameraPosition.y, -0.002]}
             onPointerDown={() => {
               setSelectedLayerId(null);
             }}
           >
             <planeGeometry
-              args={[cameraBounds.width * 2, cameraBounds.height * 2]}
+              args={[
+                (cameraBounds.width * 2) / cameraZoom,
+                (cameraBounds.height * 2) / cameraZoom,
+              ]}
             />
             <meshBasicMaterial transparent opacity={0} />
           </mesh>

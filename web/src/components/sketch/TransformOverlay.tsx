@@ -10,6 +10,8 @@ import {
   transformStartBoundsAtom,
   updateLayerTransformAtom,
   cameraBoundsAtom,
+  cameraPositionAtom,
+  cameraZoomAtom,
   type ResizeHandle,
   type LayerTransform,
 } from "@/stores/sketchStore";
@@ -29,6 +31,8 @@ export function TransformOverlay({ containerRef }: TransformOverlayProps) {
   );
   const layers = useAtomValue(layersAtom);
   const cameraBounds = useAtomValue(cameraBoundsAtom);
+  const cameraPosition = useAtomValue(cameraPositionAtom);
+  const cameraZoom = useAtomValue(cameraZoomAtom);
   const updateLayerTransform = useSetAtom(updateLayerTransformAtom);
 
   const selectedLayer = layers.find((l) => l.id === selectedLayerId);
@@ -53,10 +57,17 @@ export function TransformOverlay({ containerRef }: TransformOverlayProps) {
     if (!containerRef.current) return { x: 0, y: 0 };
 
     const rect = containerRef.current.getBoundingClientRect();
+
+    // Apply camera transformations
+    const cameraRelativeX = (x - cameraPosition.x) * cameraZoom;
+    const cameraRelativeY = (y - cameraPosition.y) * cameraZoom;
+
     const screenX =
-      ((x + cameraBounds.width / 2) / cameraBounds.width) * rect.width;
+      ((cameraRelativeX + cameraBounds.width / 2) / cameraBounds.width) *
+      rect.width;
     const screenY =
-      ((cameraBounds.height / 2 - y) / cameraBounds.height) * rect.height;
+      ((cameraBounds.height / 2 - cameraRelativeY) / cameraBounds.height) *
+      rect.height;
 
     return { x: screenX, y: screenY };
   };
@@ -87,8 +98,10 @@ export function TransformOverlay({ containerRef }: TransformOverlayProps) {
       const rect = containerRef.current?.getBoundingClientRect();
       if (!rect) return;
 
-      const worldDeltaX = (deltaX / rect.width) * cameraBounds.width;
-      const worldDeltaY = -(deltaY / rect.height) * cameraBounds.height;
+      const worldDeltaX =
+        ((deltaX / rect.width) * cameraBounds.width) / cameraZoom;
+      const worldDeltaY =
+        (-(deltaY / rect.height) * cameraBounds.height) / cameraZoom;
 
       const newTransform = { ...transformStartBounds };
 
@@ -201,6 +214,7 @@ export function TransformOverlay({ containerRef }: TransformOverlayProps) {
     transformStartBounds,
     selectedLayerId,
     cameraBounds,
+    cameraZoom,
     containerRef,
     updateLayerTransform,
     setActiveHandle,
@@ -233,16 +247,60 @@ export function TransformOverlay({ containerRef }: TransformOverlayProps) {
     >
       {/* Selection border */}
       <div
-        className="absolute border-2 border-blue-500 pointer-events-auto"
+        className="absolute border-2 border-blue-500"
         style={{
           left: `${topLeft.x}px`,
           top: `${topLeft.y}px`,
           width: `${width}px`,
           height: `${height}px`,
+          pointerEvents: "auto",
         }}
         onMouseDown={(e) => {
           e.stopPropagation();
           handleMouseDown(e, "move");
+        }}
+        onWheel={(e) => {
+          // Always prevent default to disable browser zoom and handle all wheel events
+          e.preventDefault();
+          
+          // Block browser zoom with Ctrl/Cmd+wheel completely
+          if (e.ctrlKey || e.metaKey) {
+            return;
+          }
+          
+          // Allow horizontal scrolling with Shift+wheel
+          if (e.shiftKey || e.altKey) {
+            return;
+          }
+
+          // Find the actual canvas container within SketchCanvas
+          const canvasContainer = containerRef.current?.querySelector(
+            ".bg-gray-100.rounded-lg",
+          );
+
+          if (canvasContainer) {
+            const wheelEvent = new WheelEvent("wheel", {
+              bubbles: true,
+              cancelable: true,
+              clientX: e.clientX,
+              clientY: e.clientY,
+              deltaX: e.deltaX,
+              deltaY: e.deltaY,
+              deltaZ: e.deltaZ,
+              deltaMode: e.deltaMode,
+              ctrlKey: e.ctrlKey,
+              shiftKey: e.shiftKey,
+              altKey: e.altKey,
+              metaKey: e.metaKey,
+              buttons: e.buttons,
+              relatedTarget: e.relatedTarget,
+              screenX: e.screenX,
+              screenY: e.screenY,
+              detail: e.detail,
+              view: window,
+            });
+            canvasContainer.dispatchEvent(wheelEvent);
+          }
         }}
       >
         {/* Resize handles - corners only */}

@@ -75,6 +75,25 @@ export const cameraBoundsAtom = atom({
   height: 6,
 });
 
+// Camera position for panning
+export const cameraPositionAtom = atom({ x: 0, y: 0 });
+
+// Camera zoom level
+export const cameraZoomAtom = atom(1);
+
+// Pan gesture state
+export interface PanState {
+  isPanning: boolean;
+  startMouse: { x: number; y: number } | null;
+  startCamera: { x: number; y: number } | null;
+}
+
+export const panStateAtom = atom<PanState>({
+  isPanning: false,
+  startMouse: null,
+  startCamera: null,
+});
+
 // Canvas size - fixed to prevent resizing issues
 export const canvasSizeAtom = atom({
   width: 1600,

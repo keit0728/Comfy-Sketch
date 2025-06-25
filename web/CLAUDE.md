@@ -2,6 +2,10 @@
 
 This file contains configuration and instructions for Claude Code to work effectively with this project.
 
+## Language Settings
+
+- **Response Language**: Always respond in Japanese (日本語) unless explicitly requested otherwise
+
 ## Project Overview
 
 This is a Next.js web application with TypeScript, using internationalization (i18n) and component-based architecture. The project allows users to draw in 2D space using Three.js for rendering and canvas manipulation.

@@ -1,12 +1,13 @@
-import { getTranslations, setRequestLocale } from "next-intl/server";
+import { setRequestLocale } from "next-intl/server";
+import ViewClientOnly from "./view-client-only";
 
 export default async function HomePage({
   params,
 }: {
   params: Promise<{ locale: string }>;
 }) {
-  const [{ locale }, t] = await Promise.all([params, getTranslations()]);
+  const { locale } = await params;
   setRequestLocale(locale);
 
-  return <div className="">{t("home.title")}</div>;
+  return <ViewClientOnly />;
 }

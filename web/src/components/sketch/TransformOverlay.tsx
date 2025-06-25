@@ -1,7 +1,7 @@
 "use client";
 
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import {
   selectedLayerIdAtom,
   layersAtom,
@@ -34,6 +34,7 @@ export function TransformOverlay({ containerRef }: TransformOverlayProps) {
   const cameraPosition = useAtomValue(cameraPositionAtom);
   const cameraZoom = useAtomValue(cameraZoomAtom);
   const updateLayerTransform = useSetAtom(updateLayerTransformAtom);
+  const selectionBorderRef = useRef<HTMLDivElement>(null);
 
   const selectedLayer = layers.find((l) => l.id === selectedLayerId);
 
@@ -222,6 +223,63 @@ export function TransformOverlay({ containerRef }: TransformOverlayProps) {
     setTransformStartBounds,
   ]);
 
+  // Handle wheel events on selection border with passive: false
+  useEffect(() => {
+    const selectionBorder = selectionBorderRef.current;
+    if (!selectionBorder || !containerRef.current) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      // Always prevent default to disable browser zoom and handle all wheel events
+      e.preventDefault();
+      
+      // Block browser zoom with Ctrl/Cmd+wheel completely
+      if (e.ctrlKey || e.metaKey) {
+        return;
+      }
+      
+      // Allow horizontal scrolling with Shift+wheel
+      if (e.shiftKey || e.altKey) {
+        return;
+      }
+
+      // Find the actual canvas container within SketchCanvas
+      const canvasContainer = containerRef.current?.querySelector(
+        ".bg-gray-100.rounded-lg",
+      );
+
+      if (canvasContainer) {
+        const wheelEvent = new WheelEvent("wheel", {
+          bubbles: true,
+          cancelable: true,
+          clientX: e.clientX,
+          clientY: e.clientY,
+          deltaX: e.deltaX,
+          deltaY: e.deltaY,
+          deltaZ: e.deltaZ,
+          deltaMode: e.deltaMode,
+          ctrlKey: e.ctrlKey,
+          shiftKey: e.shiftKey,
+          altKey: e.altKey,
+          metaKey: e.metaKey,
+          buttons: e.buttons,
+          relatedTarget: e.relatedTarget,
+          screenX: e.screenX,
+          screenY: e.screenY,
+          detail: e.detail,
+          view: window,
+        });
+        canvasContainer.dispatchEvent(wheelEvent);
+      }
+    };
+
+    // Add wheel event listener with passive: false
+    selectionBorder.addEventListener("wheel", handleWheel, { passive: false });
+
+    return () => {
+      selectionBorder.removeEventListener("wheel", handleWheel);
+    };
+  }, [containerRef]);
+
   if (!selectedLayer || !selectedLayerId || !containerRef.current) return null;
 
   const bounds = getLayerBounds(selectedLayer);
@@ -247,6 +305,7 @@ export function TransformOverlay({ containerRef }: TransformOverlayProps) {
     >
       {/* Selection border */}
       <div
+        ref={selectionBorderRef}
         className="absolute border-2 border-blue-500"
         style={{
           left: `${topLeft.x}px`,
@@ -258,49 +317,6 @@ export function TransformOverlay({ containerRef }: TransformOverlayProps) {
         onMouseDown={(e) => {
           e.stopPropagation();
           handleMouseDown(e, "move");
-        }}
-        onWheel={(e) => {
-          // Always prevent default to disable browser zoom and handle all wheel events
-          e.preventDefault();
-          
-          // Block browser zoom with Ctrl/Cmd+wheel completely
-          if (e.ctrlKey || e.metaKey) {
-            return;
-          }
-          
-          // Allow horizontal scrolling with Shift+wheel
-          if (e.shiftKey || e.altKey) {
-            return;
-          }
-
-          // Find the actual canvas container within SketchCanvas
-          const canvasContainer = containerRef.current?.querySelector(
-            ".bg-gray-100.rounded-lg",
-          );
-
-          if (canvasContainer) {
-            const wheelEvent = new WheelEvent("wheel", {
-              bubbles: true,
-              cancelable: true,
-              clientX: e.clientX,
-              clientY: e.clientY,
-              deltaX: e.deltaX,
-              deltaY: e.deltaY,
-              deltaZ: e.deltaZ,
-              deltaMode: e.deltaMode,
-              ctrlKey: e.ctrlKey,
-              shiftKey: e.shiftKey,
-              altKey: e.altKey,
-              metaKey: e.metaKey,
-              buttons: e.buttons,
-              relatedTarget: e.relatedTarget,
-              screenX: e.screenX,
-              screenY: e.screenY,
-              detail: e.detail,
-              view: window,
-            });
-            canvasContainer.dispatchEvent(wheelEvent);
-          }
         }}
       >
         {/* Resize handles - corners only */}

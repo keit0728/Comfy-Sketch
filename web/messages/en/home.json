@@ -1,3 +1,9 @@
 {
-  "title": "Home"
+  "title": "Home",
+  "toolbar": {
+    "pen": "Pen",
+    "penTool": "Pen tool",
+    "eraser": "Eraser",
+    "eraserTool": "Eraser tool"
+  }
 }

@@ -1,3 +1,9 @@
 {
-  "title": "ホーム"
+  "title": "ホーム",
+  "toolbar": {
+    "pen": "ペン",
+    "penTool": "ペンツール",
+    "eraser": "消しゴム",
+    "eraserTool": "消しゴムツール"
+  }
 }

@@ -1,5 +1,5 @@
 import { setRequestLocale } from "next-intl/server";
-import ViewClientOnly from "./view-client-only";
+import ViewClientOnly from "./(components)/view-client-only";
 
 export default async function HomePage({
   params,

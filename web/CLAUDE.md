@@ -51,11 +51,28 @@ npm run format
 - Use TypeScript for type safety
 - Follow existing component patterns in `src/components/`
 - Maintain consistent file naming conventions
+- Use kebab-case for file names
 - Use Tailwind CSS for styling
 - Support both English and Japanese locales
 - All comments in source code must be written in English
 - NEVER use `console.log()` statements for debugging - remove all debug logging before completing tasks
 - When defining useState, always specify the type explicitly (e.g., `useState<boolean>(false)`, `useState<string>('')`, `useState<number>(0)`)
+- Function components must always be defined using FC type with className and ...props as parameters
+- Each file should contain only one function component
+
+## UI Components and Design
+
+- Use shadcn/ui components as much as possible for consistent design
+- Page-specific components should be placed in `src/app/[locale]/<page-name>/(components)` directory. Exception: home page components should be placed in `src/app/[locale]/(components)`
+- Common components used across all pages should be placed in `src/components/common`
+- The `src/components/ui` directory should only contain components downloaded via shadcn/ui
+
+## Internationalization (i18n)
+
+- All features must support i18n
+- Manage i18n message files according to these rules:
+  - `common.json` - Store strings used in common components
+  - `page-name.json` - Store strings used in page-specific components
 
 ## State Management with Jotai
 

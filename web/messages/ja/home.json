@@ -4,6 +4,8 @@
     "pen": "ペン",
     "penTool": "ペンツール",
     "eraser": "消しゴム",
-    "eraserTool": "消しゴムツール"
+    "eraserTool": "消しゴムツール",
+    "brushSize": "サイズ",
+    "selectBrushSize": "ブラシサイズを選択"
   }
 }

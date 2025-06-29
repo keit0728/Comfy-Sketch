@@ -8,6 +8,7 @@
     "select": "Select",
     "selectTool": "Select tool",
     "brushSize": "Size",
-    "selectBrushSize": "Select brush size"
+    "selectBrushSize": "Select brush size",
+    "selectColor": "Select color"
   }
 }

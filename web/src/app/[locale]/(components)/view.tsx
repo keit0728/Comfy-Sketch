@@ -1,6 +1,13 @@
 "use client";
 
-import React, { useEffect, useRef, useState, FC, ComponentProps } from "react";
+import React, {
+  useEffect,
+  useRef,
+  useState,
+  FC,
+  ComponentProps,
+  useCallback,
+} from "react";
 import { useAtom, useAtomValue } from "jotai";
 import {
   currentToolAtom,
@@ -23,6 +30,8 @@ const HomePage: FC<HomePageProps> = ({ className, ...props }) => {
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const [cursorPosition, setCursorPosition] = useState<Point | null>(null);
   const stageRef = useRef<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
+  const lastMouseMoveTime = useRef<number>(0);
+  const mouseThrottleDelay = 16; // ~60fps
 
   const currentTool = useAtomValue(currentToolAtom);
   const brushSize = useAtomValue(brushSizeAtom);
@@ -43,7 +52,7 @@ const HomePage: FC<HomePageProps> = ({ className, ...props }) => {
     return () => window.removeEventListener("resize", updateDimensions);
   }, []);
 
-  const handleMouseDown = () => {
+  const handleMouseDown = useCallback(() => {
     const stage = stageRef.current;
     const point = stage.getPointerPosition();
 
@@ -78,9 +87,15 @@ const HomePage: FC<HomePageProps> = ({ className, ...props }) => {
         },
       ]);
     }
-  };
+  }, [currentTool, lines, brushColor, brushSize, setSelectedLineId]);
 
-  const handleMouseMove = () => {
+  const handleMouseMove = useCallback(() => {
+    const now = Date.now();
+    if (now - lastMouseMoveTime.current < mouseThrottleDelay) {
+      return;
+    }
+    lastMouseMoveTime.current = now;
+
     const stage = stageRef.current;
     const point = stage.getPointerPosition();
     setCursorPosition({ x: point.x, y: point.y });
@@ -90,8 +105,8 @@ const HomePage: FC<HomePageProps> = ({ className, ...props }) => {
       const dx = point.x - dragStartPoint.x;
       const dy = point.y - dragStartPoint.y;
 
-      setLines(
-        lines.map((line) => {
+      setLines((prevLines) =>
+        prevLines.map((line) => {
           if (line.id === selectedLineId) {
             const newPoints = [];
             for (let i = 0; i < line.points.length; i += 2) {
@@ -106,18 +121,23 @@ const HomePage: FC<HomePageProps> = ({ className, ...props }) => {
 
       setDragStartPoint(point);
     } else if (isDrawing && currentTool !== "select") {
-      const lastLine = lines[lines.length - 1];
+      // Create a new array with updated last line
+      setLines((prevLines) => {
+        const updatedLines = [...prevLines];
+        const lastLine = updatedLines[updatedLines.length - 1];
 
-      // Add point to last line
-      lastLine.points = lastLine.points.concat([point.x, point.y]);
+        // Create a new line object with updated points
+        updatedLines[updatedLines.length - 1] = {
+          ...lastLine,
+          points: [...lastLine.points, point.x, point.y],
+        };
 
-      // Replace last line
-      lines.splice(lines.length - 1, 1, lastLine);
-      setLines(lines.concat());
+        return updatedLines;
+      });
     }
-  };
+  }, [isDragging, selectedLineId, dragStartPoint, isDrawing, currentTool]);
 
-  const handleMouseUp = () => {
+  const handleMouseUp = useCallback(() => {
     setIsDrawing(false);
     setIsDragging(false);
     setDragStartPoint(null);
@@ -126,11 +146,11 @@ const HomePage: FC<HomePageProps> = ({ className, ...props }) => {
     if (currentTool === "select") {
       setSelectedLineId(null);
     }
-  };
+  }, [currentTool, setSelectedLineId]);
 
-  const handleMouseLeave = () => {
+  const handleMouseLeave = useCallback(() => {
     setCursorPosition(null);
-  };
+  }, []);
 
   return (
     <div className={className} {...props}>

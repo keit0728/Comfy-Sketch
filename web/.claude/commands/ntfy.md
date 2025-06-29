@@ -9,16 +9,19 @@ curl -d "<message>" ntfy.sh/<topic>
 ```
 
 Example:
+
 ```bash
 curl -d "Task completed successfully!" ntfy.sh/my-notifications
 ```
 
 With title:
+
 ```bash
 curl -H "Title: <title>" -d "<message>" ntfy.sh/<topic>
 ```
 
 With priority:
+
 ```bash
 curl -H "Priority: high" -d "<message>" ntfy.sh/<topic>
 ```

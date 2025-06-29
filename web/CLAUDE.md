@@ -55,7 +55,6 @@ npm run format
 - Use Tailwind CSS for styling
 - Support both English and Japanese locales
 - All comments in source code must be written in English
-- NEVER use `console.log()` statements for debugging - remove all debug logging before completing tasks
 - When defining useState, always specify the type explicitly (e.g., `useState<boolean>(false)`, `useState<string>('')`, `useState<number>(0)`)
 - Function components must always be defined using FC type with className and ...props as parameters
 - Each file should contain only one function component

@@ -4,6 +4,8 @@ export const generateId = () => {
   return Date.now().toString(36) + Math.random().toString(36).substr(2);
 };
 
+export const DEFAULT_LAYER_ID = "default-layer";
+
 export const isPointNearLine = (point: Point, line: DrawingLine) => {
   // Use half of the line thickness plus additional margin as threshold
   const threshold = line.strokeWidth / 2 + 5;
@@ -47,4 +49,50 @@ export const isPointNearLine = (point: Point, line: DrawingLine) => {
     }
   }
   return false;
+};
+
+export const findRelatedEraserLines = (
+  selectedLine: DrawingLine,
+  allLines: DrawingLine[],
+): string[] => {
+  const relatedIds: string[] = [];
+
+  // Find all eraser lines that intersect with the selected line
+  for (const line of allLines) {
+    if (line.tool === "eraser" && line.id !== selectedLine.id) {
+      // Check if any eraser points overlap with the selected line
+      for (let i = 0; i < line.points.length - 1; i += 2) {
+        const point = { x: line.points[i], y: line.points[i + 1] };
+        if (isPointNearLine(point, selectedLine)) {
+          relatedIds.push(line.id);
+          break;
+        }
+      }
+    }
+  }
+
+  return relatedIds;
+};
+
+export const findRelatedDrawingLines = (
+  eraserLine: DrawingLine,
+  allLines: DrawingLine[],
+): string[] => {
+  const relatedIds: string[] = [];
+
+  // Find all drawing lines that the eraser line intersects with
+  for (const line of allLines) {
+    if (line.tool !== "eraser" && line.id !== eraserLine.id) {
+      // Check if any eraser points overlap with the drawing line
+      for (let i = 0; i < eraserLine.points.length - 1; i += 2) {
+        const point = { x: eraserLine.points[i], y: eraserLine.points[i + 1] };
+        if (isPointNearLine(point, line)) {
+          relatedIds.push(line.id);
+          break;
+        }
+      }
+    }
+  }
+
+  return relatedIds;
 };

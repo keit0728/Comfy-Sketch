@@ -23,7 +23,7 @@ export const DrawingLine: FC<DrawingLineProps> = ({ line, isSelected }) => {
           line.tool === "eraser" ? "destination-out" : "source-over"
         }
       />
-      {isSelected && (
+      {isSelected && line.tool !== "eraser" && (
         <Line
           points={line.points}
           stroke="#0066ff"

@@ -11,6 +11,8 @@
     "selectBrushSize": "ブラシサイズを選択",
     "selectColor": "色を選択",
     "undo": "元に戻す",
-    "redo": "やり直す"
+    "redo": "やり直す",
+    "layers": "レイヤー",
+    "addLayer": "レイヤーを追加"
   }
 }

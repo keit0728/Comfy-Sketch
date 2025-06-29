@@ -14,6 +14,7 @@ import {
   brushSizeAtom,
   brushColorAtom,
   selectedLineIdAtom,
+  selectedLineIdsAtom,
 } from "@/stores/tool-store";
 import {
   historyAtom,
@@ -24,6 +25,7 @@ import {
   canRedoAtom,
   initializeHistoryAtom,
 } from "@/stores/history-store";
+import { currentLayerIdAtom } from "@/stores/layer-store";
 import { ToolBar } from "./tool-bar";
 import { DrawingCanvas } from "./drawing-canvas";
 import { DrawingLine, Point } from "@/lib/drawing/types";
@@ -46,6 +48,7 @@ const HomePage: FC<HomePageProps> = ({ className, ...props }) => {
   const brushSize = useAtomValue(brushSizeAtom);
   const brushColor = useAtomValue(brushColorAtom);
   const [selectedLineId, setSelectedLineId] = useAtom(selectedLineIdAtom);
+  const [selectedLineIds, setSelectedLineIds] = useAtom(selectedLineIdsAtom);
 
   const history = useAtomValue(historyAtom);
   const pushHistory = useSetAtom(pushHistoryAtom);
@@ -54,6 +57,7 @@ const HomePage: FC<HomePageProps> = ({ className, ...props }) => {
   const canUndo = useAtomValue(canUndoAtom);
   const canRedo = useAtomValue(canRedoAtom);
   const initializeHistory = useSetAtom(initializeHistoryAtom);
+  const currentLayerId = useAtomValue(currentLayerIdAtom);
 
   const lines = history.present;
 
@@ -105,24 +109,35 @@ const HomePage: FC<HomePageProps> = ({ className, ...props }) => {
     const point = stage.getPointerPosition();
 
     if (currentTool === "select") {
-      // Find which line was clicked
+      // Find which line was clicked (excluding eraser lines)
       let clickedLineId = null;
+      let clickedLine = null;
       for (let i = lines.length - 1; i >= 0; i--) {
-        if (isPointNearLine(point, lines[i])) {
+        if (lines[i].tool !== "eraser" && isPointNearLine(point, lines[i])) {
           clickedLineId = lines[i].id;
+          clickedLine = lines[i];
           break;
         }
       }
 
       setSelectedLineId(clickedLineId);
 
-      if (clickedLineId) {
+      if (clickedLineId && clickedLine) {
+        // Select all lines on the same layer (including eraser lines)
+        const sameLayerLineIds = lines
+          .filter((line) => line.layerId === clickedLine.layerId)
+          .map((line) => line.id);
+
+        setSelectedLineIds(sameLayerLineIds);
         setIsDragging(true);
         setDragStartPoint(point);
+      } else {
+        setSelectedLineIds([]);
       }
     } else {
       setIsDrawing(true);
       setSelectedLineId(null);
+      setSelectedLineIds([]);
 
       const newLine: DrawingLine = {
         id: generateId(),
@@ -130,11 +145,20 @@ const HomePage: FC<HomePageProps> = ({ className, ...props }) => {
         color: currentTool === "eraser" ? "black" : brushColor,
         strokeWidth: currentTool === "eraser" ? brushSize * 2 : brushSize,
         tool: currentTool,
+        layerId: currentLayerId,
       };
 
       setLocalLines([...lines, newLine]);
     }
-  }, [currentTool, lines, brushColor, brushSize, setSelectedLineId]);
+  }, [
+    currentTool,
+    lines,
+    brushColor,
+    brushSize,
+    setSelectedLineId,
+    setSelectedLineIds,
+    currentLayerId,
+  ]);
 
   const handleMouseMove = useCallback(() => {
     const now = Date.now();
@@ -147,14 +171,14 @@ const HomePage: FC<HomePageProps> = ({ className, ...props }) => {
     const point = stage.getPointerPosition();
     setCursorPosition({ x: point.x, y: point.y });
 
-    if (isDragging && selectedLineId && dragStartPoint) {
-      // Move the selected line
+    if (isDragging && selectedLineIds.length > 0 && dragStartPoint) {
+      // Move all selected lines
       const dx = point.x - dragStartPoint.x;
       const dy = point.y - dragStartPoint.y;
 
       setLocalLines((prevLines) =>
         prevLines.map((line) => {
-          if (line.id === selectedLineId) {
+          if (selectedLineIds.includes(line.id)) {
             const newPoints = [];
             for (let i = 0; i < line.points.length; i += 2) {
               newPoints.push(line.points[i] + dx);
@@ -182,7 +206,7 @@ const HomePage: FC<HomePageProps> = ({ className, ...props }) => {
         return updatedLines;
       });
     }
-  }, [isDragging, selectedLineId, dragStartPoint, isDrawing, currentTool]);
+  }, [isDragging, selectedLineIds, dragStartPoint, isDrawing, currentTool]);
 
   const handleMouseUp = useCallback(() => {
     if (isDrawing || isDragging) {
@@ -197,6 +221,7 @@ const HomePage: FC<HomePageProps> = ({ className, ...props }) => {
     // 選択ツールの場合は選択を解除
     if (currentTool === "select") {
       setSelectedLineId(null);
+      setSelectedLineIds([]);
     }
   }, [
     currentTool,
@@ -205,6 +230,7 @@ const HomePage: FC<HomePageProps> = ({ className, ...props }) => {
     isDragging,
     localLines,
     pushHistory,
+    setSelectedLineIds,
   ]);
 
   const handleMouseLeave = useCallback(() => {
@@ -218,6 +244,7 @@ const HomePage: FC<HomePageProps> = ({ className, ...props }) => {
         dimensions={dimensions}
         lines={localLines}
         selectedLineId={selectedLineId}
+        selectedLineIds={selectedLineIds}
         cursorPosition={cursorPosition}
         stageRef={stageRef}
         currentTool={currentTool}

@@ -11,6 +11,8 @@
     "selectBrushSize": "Select brush size",
     "selectColor": "Select color",
     "undo": "Undo",
-    "redo": "Redo"
+    "redo": "Redo",
+    "layers": "Layers",
+    "addLayer": "Add Layer"
   }
 }

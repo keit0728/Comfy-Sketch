@@ -1,6 +1,6 @@
 "use client";
 
-import React, { ComponentProps, FC } from "react";
+import React, { ComponentProps, FC, useState } from "react";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import {
   currentToolAtom,
@@ -13,6 +13,11 @@ import {
   canUndoAtom,
   canRedoAtom,
 } from "@/stores/history-store";
+import {
+  layersAtom,
+  currentLayerIdAtom,
+  addLayerAtom,
+} from "@/stores/layer-store";
 import { Card } from "@/components/ui/card";
 import { Toggle } from "@/components/ui/toggle";
 import {
@@ -20,7 +25,15 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Pencil, Eraser, MousePointer, Undo2, Redo2 } from "lucide-react";
+import {
+  Pencil,
+  Eraser,
+  MousePointer,
+  Undo2,
+  Redo2,
+  Layers,
+  Plus,
+} from "lucide-react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { BrushSizeSelector } from "./brush-size-selector";
@@ -39,6 +52,11 @@ export const ToolBar: FC<ToolBarProps> = ({ className, ...props }) => {
   const redo = useSetAtom(redoAtom);
   const canUndo = useAtomValue(canUndoAtom);
   const canRedo = useAtomValue(canRedoAtom);
+
+  const layers = useAtomValue(layersAtom);
+  const [currentLayerId, setCurrentLayerId] = useAtom(currentLayerIdAtom);
+  const addLayer = useSetAtom(addLayerAtom);
+  const [openLayers, setOpenLayers] = useState<boolean>(false);
 
   return (
     <Card
@@ -132,6 +150,49 @@ export const ToolBar: FC<ToolBarProps> = ({ className, ...props }) => {
             style={{ backgroundColor: brushColor }}
           />
         </Toggle>
+        <div className="h-8 w-px bg-gray-300" />
+        <Popover open={openLayers} onOpenChange={setOpenLayers}>
+          <PopoverTrigger asChild>
+            <Toggle
+              pressed={false}
+              aria-label={t("layers")}
+              className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+            >
+              <Layers className="h-4 w-4" />
+              <span className="ml-2">
+                {layers.find((l) => l.id === currentLayerId)?.name || ""}
+              </span>
+            </Toggle>
+          </PopoverTrigger>
+          <PopoverContent className="w-64 p-2" align="center">
+            <div className="space-y-1">
+              {layers.map((layer) => (
+                <button
+                  key={layer.id}
+                  onClick={() => {
+                    setCurrentLayerId(layer.id);
+                    setOpenLayers(false);
+                  }}
+                  className={`w-full rounded px-3 py-2 text-left text-sm hover:bg-gray-100 ${
+                    currentLayerId === layer.id ? "bg-gray-100 font-medium" : ""
+                  }`}
+                >
+                  {layer.name}
+                </button>
+              ))}
+              <button
+                onClick={() => {
+                  addLayer();
+                  setOpenLayers(false);
+                }}
+                className="flex w-full items-center rounded px-3 py-2 text-left text-sm hover:bg-gray-100"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                {t("addLayer")}
+              </button>
+            </div>
+          </PopoverContent>
+        </Popover>
       </div>
     </Card>
   );

@@ -51,7 +51,7 @@ const HomePage: FC<HomePageProps> = ({ className, ...props }) => {
     setLines([
       ...lines,
       {
-        points: [point.x, point.y],
+        points: [point.x, point.y, point.x, point.y],
         color: currentTool === "eraser" ? "black" : brushColor,
         strokeWidth: currentTool === "eraser" ? brushSize * 2 : brushSize,
         tool: currentTool,

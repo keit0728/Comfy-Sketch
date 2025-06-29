@@ -4,6 +4,15 @@ export interface DrawingLine {
   color: string;
   strokeWidth: number;
   tool: "pen" | "eraser";
+  layerId: string;
+}
+
+export interface Layer {
+  id: string;
+  name: string;
+  visible: boolean;
+  locked: boolean;
+  opacity: number;
 }
 
 export interface Point {

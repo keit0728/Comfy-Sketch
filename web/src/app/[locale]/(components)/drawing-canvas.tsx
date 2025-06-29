@@ -11,6 +11,7 @@ interface DrawingCanvasProps {
   dimensions: { width: number; height: number };
   lines: DrawingLine[];
   selectedLineId: string | null;
+  selectedLineIds?: string[];
   cursorPosition: Point | null;
   stageRef: RefObject<Konva.Stage>;
   currentTool: "pen" | "eraser" | "select";
@@ -26,6 +27,7 @@ export const DrawingCanvas: FC<DrawingCanvasProps> = ({
   dimensions,
   lines,
   selectedLineId,
+  selectedLineIds = [],
   cursorPosition,
   stageRef,
   currentTool,
@@ -60,7 +62,9 @@ export const DrawingCanvas: FC<DrawingCanvasProps> = ({
           <DrawingLineComponent
             key={line.id}
             line={line}
-            isSelected={selectedLineId === line.id}
+            isSelected={
+              selectedLineId === line.id || selectedLineIds.includes(line.id)
+            }
           />
         ))}
         <CursorDisplay

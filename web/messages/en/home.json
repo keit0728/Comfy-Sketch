@@ -5,6 +5,8 @@
     "penTool": "Pen tool",
     "eraser": "Eraser",
     "eraserTool": "Eraser tool",
+    "select": "Select",
+    "selectTool": "Select tool",
     "brushSize": "Size",
     "selectBrushSize": "Select brush size"
   }

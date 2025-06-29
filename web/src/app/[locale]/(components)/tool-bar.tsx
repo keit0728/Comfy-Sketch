@@ -1,12 +1,18 @@
 "use client";
 
 import React, { ComponentProps, FC } from "react";
-import { useAtom } from "jotai";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import {
   currentToolAtom,
   brushSizeAtom,
   brushColorAtom,
 } from "@/stores/tool-store";
+import {
+  undoAtom,
+  redoAtom,
+  canUndoAtom,
+  canRedoAtom,
+} from "@/stores/history-store";
 import { Card } from "@/components/ui/card";
 import { Toggle } from "@/components/ui/toggle";
 import {
@@ -14,7 +20,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Pencil, Eraser, MousePointer } from "lucide-react";
+import { Pencil, Eraser, MousePointer, Undo2, Redo2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { BrushSizeSelector } from "./brush-size-selector";
@@ -28,6 +34,11 @@ export const ToolBar: FC<ToolBarProps> = ({ className, ...props }) => {
   const [openSize, setOpenSize] = React.useState(false);
   const t = useTranslations("home.toolbar");
   const colorInputRef = React.useRef<HTMLInputElement>(null);
+
+  const undo = useSetAtom(undoAtom);
+  const redo = useSetAtom(redoAtom);
+  const canUndo = useAtomValue(canUndoAtom);
+  const canRedo = useAtomValue(canRedoAtom);
 
   return (
     <Card
@@ -64,6 +75,25 @@ export const ToolBar: FC<ToolBarProps> = ({ className, ...props }) => {
         >
           <MousePointer className="h-4 w-4" />
           <span className="ml-2">{t("select")}</span>
+        </Toggle>
+        <div className="h-8 w-px bg-gray-300" />
+        <Toggle
+          pressed={false}
+          onPressedChange={() => undo()}
+          aria-label={t("undo")}
+          disabled={!canUndo}
+          className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+        >
+          <Undo2 className="h-4 w-4" />
+        </Toggle>
+        <Toggle
+          pressed={false}
+          onPressedChange={() => redo()}
+          aria-label={t("redo")}
+          disabled={!canRedo}
+          className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+        >
+          <Redo2 className="h-4 w-4" />
         </Toggle>
         <div className="h-8 w-px bg-gray-300" />
         <Toggle

@@ -9,6 +9,8 @@
     "selectTool": "選択ツール",
     "brushSize": "サイズ",
     "selectBrushSize": "ブラシサイズを選択",
-    "selectColor": "色を選択"
+    "selectColor": "色を選択",
+    "undo": "元に戻す",
+    "redo": "やり直す"
   }
 }

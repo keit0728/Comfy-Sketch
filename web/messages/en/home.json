@@ -9,6 +9,8 @@
     "selectTool": "Select tool",
     "brushSize": "Size",
     "selectBrushSize": "Select brush size",
-    "selectColor": "Select color"
+    "selectColor": "Select color",
+    "undo": "Undo",
+    "redo": "Redo"
   }
 }

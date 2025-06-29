@@ -8,13 +8,22 @@ import React, {
   ComponentProps,
   useCallback,
 } from "react";
-import { useAtom, useAtomValue } from "jotai";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import {
   currentToolAtom,
   brushSizeAtom,
   brushColorAtom,
   selectedLineIdAtom,
 } from "@/stores/tool-store";
+import {
+  historyAtom,
+  pushHistoryAtom,
+  undoAtom,
+  redoAtom,
+  canUndoAtom,
+  canRedoAtom,
+  initializeHistoryAtom,
+} from "@/stores/history-store";
 import { ToolBar } from "./tool-bar";
 import { DrawingCanvas } from "./drawing-canvas";
 import { DrawingLine, Point } from "@/lib/drawing/types";
@@ -23,7 +32,7 @@ import { generateId, isPointNearLine } from "@/lib/drawing/utils";
 interface HomePageProps extends ComponentProps<"div"> {}
 
 const HomePage: FC<HomePageProps> = ({ className, ...props }) => {
-  const [lines, setLines] = useState<DrawingLine[]>([]);
+  const [localLines, setLocalLines] = useState<DrawingLine[]>([]);
   const [isDrawing, setIsDrawing] = useState<boolean>(false);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [dragStartPoint, setDragStartPoint] = useState<Point | null>(null);
@@ -37,6 +46,45 @@ const HomePage: FC<HomePageProps> = ({ className, ...props }) => {
   const brushSize = useAtomValue(brushSizeAtom);
   const brushColor = useAtomValue(brushColorAtom);
   const [selectedLineId, setSelectedLineId] = useAtom(selectedLineIdAtom);
+
+  const history = useAtomValue(historyAtom);
+  const pushHistory = useSetAtom(pushHistoryAtom);
+  const undo = useSetAtom(undoAtom);
+  const redo = useSetAtom(redoAtom);
+  const canUndo = useAtomValue(canUndoAtom);
+  const canRedo = useAtomValue(canRedoAtom);
+  const initializeHistory = useSetAtom(initializeHistoryAtom);
+
+  const lines = history.present;
+
+  // Initialize history on mount
+  useEffect(() => {
+    initializeHistory([]);
+  }, [initializeHistory]);
+
+  // Update local lines when history changes
+  useEffect(() => {
+    setLocalLines(history.present);
+  }, [history.present]);
+
+  // Handle keyboard shortcuts for undo/redo
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "z" && !e.shiftKey && canUndo) {
+        e.preventDefault();
+        undo();
+      } else if (
+        ((e.metaKey || e.ctrlKey) && e.key === "z" && e.shiftKey && canRedo) ||
+        ((e.metaKey || e.ctrlKey) && e.key === "y" && canRedo)
+      ) {
+        e.preventDefault();
+        redo();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [undo, redo, canUndo, canRedo]);
 
   // Set canvas dimensions to full screen
   useEffect(() => {
@@ -76,16 +124,15 @@ const HomePage: FC<HomePageProps> = ({ className, ...props }) => {
       setIsDrawing(true);
       setSelectedLineId(null);
 
-      setLines([
-        ...lines,
-        {
-          id: generateId(),
-          points: [point.x, point.y, point.x, point.y],
-          color: currentTool === "eraser" ? "black" : brushColor,
-          strokeWidth: currentTool === "eraser" ? brushSize * 2 : brushSize,
-          tool: currentTool,
-        },
-      ]);
+      const newLine: DrawingLine = {
+        id: generateId(),
+        points: [point.x, point.y, point.x, point.y],
+        color: currentTool === "eraser" ? "black" : brushColor,
+        strokeWidth: currentTool === "eraser" ? brushSize * 2 : brushSize,
+        tool: currentTool,
+      };
+
+      setLocalLines([...lines, newLine]);
     }
   }, [currentTool, lines, brushColor, brushSize, setSelectedLineId]);
 
@@ -105,7 +152,7 @@ const HomePage: FC<HomePageProps> = ({ className, ...props }) => {
       const dx = point.x - dragStartPoint.x;
       const dy = point.y - dragStartPoint.y;
 
-      setLines((prevLines) =>
+      setLocalLines((prevLines) =>
         prevLines.map((line) => {
           if (line.id === selectedLineId) {
             const newPoints = [];
@@ -122,7 +169,7 @@ const HomePage: FC<HomePageProps> = ({ className, ...props }) => {
       setDragStartPoint(point);
     } else if (isDrawing && currentTool !== "select") {
       // Create a new array with updated last line
-      setLines((prevLines) => {
+      setLocalLines((prevLines) => {
         const updatedLines = [...prevLines];
         const lastLine = updatedLines[updatedLines.length - 1];
 
@@ -138,6 +185,11 @@ const HomePage: FC<HomePageProps> = ({ className, ...props }) => {
   }, [isDragging, selectedLineId, dragStartPoint, isDrawing, currentTool]);
 
   const handleMouseUp = useCallback(() => {
+    if (isDrawing || isDragging) {
+      // Push current state to history when finishing drawing or dragging
+      pushHistory(localLines);
+    }
+
     setIsDrawing(false);
     setIsDragging(false);
     setDragStartPoint(null);
@@ -146,7 +198,14 @@ const HomePage: FC<HomePageProps> = ({ className, ...props }) => {
     if (currentTool === "select") {
       setSelectedLineId(null);
     }
-  }, [currentTool, setSelectedLineId]);
+  }, [
+    currentTool,
+    setSelectedLineId,
+    isDrawing,
+    isDragging,
+    localLines,
+    pushHistory,
+  ]);
 
   const handleMouseLeave = useCallback(() => {
     setCursorPosition(null);
@@ -157,7 +216,7 @@ const HomePage: FC<HomePageProps> = ({ className, ...props }) => {
       <ToolBar />
       <DrawingCanvas
         dimensions={dimensions}
-        lines={lines}
+        lines={localLines}
         selectedLineId={selectedLineId}
         cursorPosition={cursorPosition}
         stageRef={stageRef}

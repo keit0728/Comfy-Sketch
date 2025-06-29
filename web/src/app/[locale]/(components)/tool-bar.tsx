@@ -10,7 +10,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Pencil, Eraser } from "lucide-react";
+import { Pencil, Eraser, MousePointer } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { BrushSizeSelector } from "./brush-size-selector";
@@ -49,6 +49,15 @@ export const ToolBar: FC<ToolBarProps> = ({ className, ...props }) => {
         >
           <Eraser className="h-4 w-4" />
           <span className="ml-2">{t("eraser")}</span>
+        </Toggle>
+        <Toggle
+          pressed={currentTool === "select"}
+          onPressedChange={() => setCurrentTool("select")}
+          aria-label={t("selectTool")}
+          className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+        >
+          <MousePointer className="h-4 w-4" />
+          <span className="ml-2">{t("select")}</span>
         </Toggle>
         <div className="h-8 w-px bg-gray-300" />
         <Toggle

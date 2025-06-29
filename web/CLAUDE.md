@@ -66,6 +66,11 @@ npm run format
 - Page-specific components should be placed in `src/app/[locale]/<page-name>/(components)` directory. Exception: home page components should be placed in `src/app/[locale]/(components)`
 - Common components used across all pages should be placed in `src/components/common`
 - The `src/components/ui` directory should only contain components downloaded via shadcn/ui
+- Component directories (`(components)`) should only contain React component files (.tsx)
+- Type definitions and utility functions specific to components should be placed in `src/lib/<feature-name>/` directory:
+  - `src/lib/<feature-name>/types.ts` - Type definitions and interfaces
+  - `src/lib/<feature-name>/utils.ts` - Utility functions
+  - Example: Drawing-related types and utils are in `src/lib/drawing/`
 
 ## Internationalization (i18n)
 

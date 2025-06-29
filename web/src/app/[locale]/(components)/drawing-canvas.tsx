@@ -48,6 +48,12 @@ export const DrawingCanvas: FC<DrawingCanvasProps> = ({
       onTouchmove={onMouseMove}
       onTouchend={onMouseUp}
       ref={stageRef}
+      style={{
+        cursor:
+          currentTool === "pen" || currentTool === "eraser"
+            ? "none"
+            : "default",
+      }}
     >
       <Layer>
         {lines.map((line) => (

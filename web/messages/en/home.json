@@ -4,6 +4,8 @@
     "pen": "Pen",
     "penTool": "Pen tool",
     "eraser": "Eraser",
-    "eraserTool": "Eraser tool"
+    "eraserTool": "Eraser tool",
+    "brushSize": "Size",
+    "selectBrushSize": "Select brush size"
   }
 }

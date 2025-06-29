@@ -2,17 +2,25 @@
 
 import React, { ComponentProps, FC } from "react";
 import { useAtom } from "jotai";
-import { currentToolAtom } from "@/stores/tool-store";
+import { currentToolAtom, brushSizeAtom } from "@/stores/tool-store";
 import { Card } from "@/components/ui/card";
 import { Toggle } from "@/components/ui/toggle";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Pencil, Eraser } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
+import { BrushSizeSelector } from "./brush-size-selector";
 
 interface ToolBarProps extends ComponentProps<"div"> {}
 
 export const ToolBar: FC<ToolBarProps> = ({ className, ...props }) => {
   const [currentTool, setCurrentTool] = useAtom(currentToolAtom);
+  const [brushSize] = useAtom(brushSizeAtom);
+  const [open, setOpen] = React.useState(false);
   const t = useTranslations("home.toolbar");
 
   return (
@@ -41,6 +49,24 @@ export const ToolBar: FC<ToolBarProps> = ({ className, ...props }) => {
         >
           <Eraser className="h-4 w-4" />
           <span className="ml-2">{t("eraser")}</span>
+        </Toggle>
+        <div className="h-8 w-px bg-gray-300" />
+        <Toggle
+          pressed={false}
+          onPressedChange={() => {}}
+          aria-label={t("selectBrushSize")}
+          className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+        >
+          <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+              <div className="flex items-center">
+                <span className="w-12 text-center text-sm">{brushSize}px</span>
+              </div>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="center">
+              <BrushSizeSelector onSizeSelect={() => setOpen(false)} />
+            </PopoverContent>
+          </Popover>
         </Toggle>
       </div>
     </Card>

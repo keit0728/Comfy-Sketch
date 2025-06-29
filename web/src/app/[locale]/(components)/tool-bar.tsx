@@ -2,7 +2,11 @@
 
 import React, { ComponentProps, FC } from "react";
 import { useAtom } from "jotai";
-import { currentToolAtom, brushSizeAtom } from "@/stores/tool-store";
+import {
+  currentToolAtom,
+  brushSizeAtom,
+  brushColorAtom,
+} from "@/stores/tool-store";
 import { Card } from "@/components/ui/card";
 import { Toggle } from "@/components/ui/toggle";
 import {
@@ -20,8 +24,10 @@ interface ToolBarProps extends ComponentProps<"div"> {}
 export const ToolBar: FC<ToolBarProps> = ({ className, ...props }) => {
   const [currentTool, setCurrentTool] = useAtom(currentToolAtom);
   const [brushSize] = useAtom(brushSizeAtom);
-  const [open, setOpen] = React.useState(false);
+  const [brushColor, setBrushColor] = useAtom(brushColorAtom);
+  const [openSize, setOpenSize] = React.useState(false);
   const t = useTranslations("home.toolbar");
+  const colorInputRef = React.useRef<HTMLInputElement>(null);
 
   return (
     <Card
@@ -66,16 +72,35 @@ export const ToolBar: FC<ToolBarProps> = ({ className, ...props }) => {
           aria-label={t("selectBrushSize")}
           className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
         >
-          <Popover open={open} onOpenChange={setOpen}>
+          <Popover open={openSize} onOpenChange={setOpenSize}>
             <PopoverTrigger asChild>
               <div className="flex items-center">
                 <span className="w-12 text-center text-sm">{brushSize}px</span>
               </div>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="center">
-              <BrushSizeSelector onSizeSelect={() => setOpen(false)} />
+              <BrushSizeSelector onSizeSelect={() => setOpenSize(false)} />
             </PopoverContent>
           </Popover>
+        </Toggle>
+        <div className="h-8 w-px bg-gray-300" />
+        <Toggle
+          pressed={false}
+          onPressedChange={() => colorInputRef.current?.click()}
+          aria-label={t("selectColor")}
+          className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground relative"
+        >
+          <input
+            ref={colorInputRef}
+            type="color"
+            value={brushColor}
+            onChange={(e) => setBrushColor(e.target.value)}
+            className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+          />
+          <div
+            className="h-4 w-4 rounded-sm border border-gray-300"
+            style={{ backgroundColor: brushColor }}
+          />
         </Toggle>
       </div>
     </Card>

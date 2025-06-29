@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState, FC, ComponentProps } from "react";
-import { Stage, Layer, Line } from "react-konva";
+import { Stage, Layer, Line, Circle } from "react-konva";
 import { useAtomValue } from "jotai";
 import {
   currentToolAtom,
@@ -23,6 +23,10 @@ const HomePage: FC<HomePageProps> = ({ className, ...props }) => {
   const [lines, setLines] = useState<DrawingLine[]>([]);
   const [isDrawing, setIsDrawing] = useState<boolean>(false);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+  const [cursorPosition, setCursorPosition] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
   const stageRef = useRef<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
 
   const currentTool = useAtomValue(currentToolAtom);
@@ -60,10 +64,12 @@ const HomePage: FC<HomePageProps> = ({ className, ...props }) => {
   };
 
   const handleMouseMove = () => {
-    if (!isDrawing) return;
-
     const stage = stageRef.current;
     const point = stage.getPointerPosition();
+    setCursorPosition({ x: point.x, y: point.y });
+
+    if (!isDrawing) return;
+
     const lastLine = lines[lines.length - 1];
 
     // Add point to last line
@@ -78,6 +84,10 @@ const HomePage: FC<HomePageProps> = ({ className, ...props }) => {
     setIsDrawing(false);
   };
 
+  const handleMouseLeave = () => {
+    setCursorPosition(null);
+  };
+
   return (
     <div className={className} {...props}>
       <ToolBar />
@@ -87,6 +97,7 @@ const HomePage: FC<HomePageProps> = ({ className, ...props }) => {
         onMouseDown={handleMouseDown}
         onMousemove={handleMouseMove}
         onMouseup={handleMouseUp}
+        onMouseLeave={handleMouseLeave}
         onTouchStart={handleMouseDown}
         onTouchmove={handleMouseMove}
         onTouchend={handleMouseUp}
@@ -107,6 +118,17 @@ const HomePage: FC<HomePageProps> = ({ className, ...props }) => {
               }
             />
           ))}
+          {cursorPosition && (
+            <Circle
+              x={cursorPosition.x}
+              y={cursorPosition.y}
+              radius={currentTool === "eraser" ? brushSize : brushSize / 2}
+              stroke={currentTool === "eraser" ? "#FF0000" : brushColor}
+              strokeWidth={2}
+              fill="transparent"
+              listening={false}
+            />
+          )}
         </Layer>
       </Stage>
     </div>

@@ -58,3 +58,14 @@ export const updateLayerAtom = atom(
     );
   },
 );
+
+export const reorderLayersAtom = atom(
+  null,
+  (get, set, fromIndex: number, toIndex: number) => {
+    const layers = get(layersAtom);
+    const newLayers = [...layers];
+    const [removed] = newLayers.splice(fromIndex, 1);
+    newLayers.splice(toIndex, 0, removed);
+    set(layersAtom, newLayers);
+  },
+);

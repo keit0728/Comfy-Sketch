@@ -3,9 +3,11 @@
 import React, { FC, RefObject } from "react";
 import { Stage, Layer } from "react-konva";
 import Konva from "konva";
+import { useAtomValue } from "jotai";
 import { DrawingLine as DrawingLineComponent } from "./drawing-line";
 import { CursorDisplay } from "./cursor-display";
 import { DrawingLine, Point } from "@/lib/drawing/types";
+import { layersAtom } from "@/stores/layer-store";
 
 interface DrawingCanvasProps {
   dimensions: { width: number; height: number };
@@ -38,10 +40,12 @@ export const DrawingCanvas: FC<DrawingCanvasProps> = ({
   onMouseUp,
   onMouseLeave,
 }) => {
-  // Group lines by layer ID and sort layers in reverse order (higher layer ID on top)
+  const layers = useAtomValue(layersAtom);
+
+  // Group lines by layer ID
   const linesByLayer = lines.reduce(
     (acc, line) => {
-      const layerId = (line.layerId || 1).toString();
+      const layerId = line.layerId;
       if (!acc[layerId]) {
         acc[layerId] = [];
       }
@@ -50,46 +54,6 @@ export const DrawingCanvas: FC<DrawingCanvasProps> = ({
     },
     {} as Record<string, DrawingLine[]>,
   );
-
-  // Sort layer IDs so that higher layer numbers are rendered first (and thus appear below)
-  const sortedLayerIds = Object.keys(linesByLayer).sort((a, b) => {
-    const numA = parseInt(a, 10);
-    const numB = parseInt(b, 10);
-    return numA - numB; // Sort ascending - layer 1 will be rendered last and appear on top
-  });
-
-  // If there are no lines, render empty canvas with just cursor
-  if (sortedLayerIds.length === 0) {
-    return (
-      <Stage
-        width={dimensions.width}
-        height={dimensions.height}
-        onMouseDown={onMouseDown}
-        onMousemove={onMouseMove}
-        onMouseup={onMouseUp}
-        onMouseLeave={onMouseLeave}
-        onTouchStart={onMouseDown}
-        onTouchmove={onMouseMove}
-        onTouchend={onMouseUp}
-        ref={stageRef}
-        style={{
-          cursor:
-            currentTool === "pen" || currentTool === "eraser"
-              ? "none"
-              : "default",
-        }}
-      >
-        <Layer>
-          <CursorDisplay
-            position={cursorPosition}
-            currentTool={currentTool}
-            brushSize={brushSize}
-            brushColor={brushColor}
-          />
-        </Layer>
-      </Stage>
-    );
-  }
 
   return (
     <Stage
@@ -110,13 +74,14 @@ export const DrawingCanvas: FC<DrawingCanvasProps> = ({
             : "default",
       }}
     >
-      {sortedLayerIds.reverse().map((layerId) => {
-        if (linesByLayer[layerId] === undefined) {
+      {[...layers].reverse().map((layer) => {
+        const layerLines = linesByLayer[layer.id];
+        if (!layerLines || layerLines.length === 0) {
           return null;
         }
         return (
-          <Layer key={layerId}>
-            {linesByLayer[layerId].map((line) => (
+          <Layer key={layer.id}>
+            {layerLines.map((line) => (
               <DrawingLineComponent
                 key={line.id}
                 line={line}

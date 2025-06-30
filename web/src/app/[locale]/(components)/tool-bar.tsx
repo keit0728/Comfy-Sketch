@@ -13,11 +13,7 @@ import {
   canUndoAtom,
   canRedoAtom,
 } from "@/stores/history-store";
-import {
-  layersAtom,
-  currentLayerIdAtom,
-  addLayerAtom,
-} from "@/stores/layer-store";
+import { layersAtom, currentLayerIdAtom } from "@/stores/layer-store";
 import { Card } from "@/components/ui/card";
 import { Toggle } from "@/components/ui/toggle";
 import {
@@ -32,11 +28,11 @@ import {
   Undo2,
   Redo2,
   Layers,
-  Plus,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { BrushSizeSelector } from "./brush-size-selector";
+import { LayerList } from "./layer-list";
 
 interface ToolBarProps extends ComponentProps<"div"> {}
 
@@ -54,8 +50,7 @@ export const ToolBar: FC<ToolBarProps> = ({ className, ...props }) => {
   const canRedo = useAtomValue(canRedoAtom);
 
   const layers = useAtomValue(layersAtom);
-  const [currentLayerId, setCurrentLayerId] = useAtom(currentLayerIdAtom);
-  const addLayer = useSetAtom(addLayerAtom);
+  const currentLayerId = useAtomValue(currentLayerIdAtom);
   const [openLayers, setOpenLayers] = useState<boolean>(false);
 
   return (
@@ -165,32 +160,7 @@ export const ToolBar: FC<ToolBarProps> = ({ className, ...props }) => {
             </Toggle>
           </PopoverTrigger>
           <PopoverContent className="w-64 p-2" align="center">
-            <div className="space-y-1">
-              {layers.map((layer) => (
-                <button
-                  key={layer.id}
-                  onClick={() => {
-                    setCurrentLayerId(layer.id);
-                    setOpenLayers(false);
-                  }}
-                  className={`w-full rounded px-3 py-2 text-left text-sm hover:bg-gray-100 ${
-                    currentLayerId === layer.id ? "bg-gray-100 font-medium" : ""
-                  }`}
-                >
-                  {layer.name}
-                </button>
-              ))}
-              <button
-                onClick={() => {
-                  addLayer();
-                  setOpenLayers(false);
-                }}
-                className="flex w-full items-center rounded px-3 py-2 text-left text-sm hover:bg-gray-100"
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                {t("addLayer")}
-              </button>
-            </div>
+            <LayerList onClose={() => setOpenLayers(false)} />
           </PopoverContent>
         </Popover>
       </div>

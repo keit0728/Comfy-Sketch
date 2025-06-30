@@ -109,11 +109,15 @@ const HomePage: FC<HomePageProps> = ({ className, ...props }) => {
     const point = stage.getPointerPosition();
 
     if (currentTool === "select") {
-      // Find which line was clicked (excluding eraser lines)
+      // Find which line was clicked (excluding eraser lines and lines not on current layer)
       let clickedLineId = null;
       let clickedLine = null;
       for (let i = lines.length - 1; i >= 0; i--) {
-        if (lines[i].tool !== "eraser" && isPointNearLine(point, lines[i])) {
+        if (
+          lines[i].tool !== "eraser" &&
+          lines[i].layerId === currentLayerId &&
+          isPointNearLine(point, lines[i])
+        ) {
           clickedLineId = lines[i].id;
           clickedLine = lines[i];
           break;

@@ -14,6 +14,7 @@ interface DrawingCanvasProps {
   lines: DrawingLine[];
   selectedLineId: string | null;
   selectedLineIds?: string[];
+  hoveredLineIds: string[];
   cursorPosition: Point | null;
   stageRef: RefObject<Konva.Stage>;
   currentTool: "pen" | "eraser" | "select";
@@ -30,6 +31,7 @@ export const DrawingCanvas: FC<DrawingCanvasProps> = ({
   lines,
   selectedLineId,
   selectedLineIds = [],
+  hoveredLineIds,
   cursorPosition,
   stageRef,
   currentTool,
@@ -89,6 +91,7 @@ export const DrawingCanvas: FC<DrawingCanvasProps> = ({
                   selectedLineId === line.id ||
                   selectedLineIds.includes(line.id)
                 }
+                isHovered={hoveredLineIds.includes(line.id)}
               />
             ))}
           </Layer>

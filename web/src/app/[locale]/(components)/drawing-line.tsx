@@ -7,9 +7,14 @@ import { DrawingLine as DrawingLineType } from "@/lib/drawing/types";
 interface DrawingLineProps {
   line: DrawingLineType;
   isSelected: boolean;
+  isHovered: boolean;
 }
 
-export const DrawingLine: FC<DrawingLineProps> = ({ line, isSelected }) => {
+export const DrawingLine: FC<DrawingLineProps> = ({
+  line,
+  isSelected,
+  isHovered,
+}) => {
   return (
     <React.Fragment>
       <Line
@@ -32,6 +37,18 @@ export const DrawingLine: FC<DrawingLineProps> = ({ line, isSelected }) => {
           lineCap="round"
           lineJoin="round"
           opacity={0.3}
+          listening={false}
+        />
+      )}
+      {isHovered && !isSelected && line.tool !== "eraser" && (
+        <Line
+          points={line.points}
+          stroke="#0066ff"
+          strokeWidth={line.strokeWidth + 4}
+          tension={0.5}
+          lineCap="round"
+          lineJoin="round"
+          opacity={0.25}
           listening={false}
         />
       )}

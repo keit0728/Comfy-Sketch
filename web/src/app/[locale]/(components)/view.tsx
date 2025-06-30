@@ -40,6 +40,7 @@ const HomePage: FC<HomePageProps> = ({ className, ...props }) => {
   const [dragStartPoint, setDragStartPoint] = useState<Point | null>(null);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const [cursorPosition, setCursorPosition] = useState<Point | null>(null);
+  const [hoveredLineIds, setHoveredLineIds] = useState<string[]>([]);
   const stageRef = useRef<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
   const lastMouseMoveTime = useRef<number>(0);
   const mouseThrottleDelay = 16; // ~60fps
@@ -175,6 +176,31 @@ const HomePage: FC<HomePageProps> = ({ className, ...props }) => {
     const point = stage.getPointerPosition();
     setCursorPosition({ x: point.x, y: point.y });
 
+    // Check for hovered line when using select tool
+    if (currentTool === "select" && !isDragging) {
+      let hoveredLine = null;
+      for (let i = lines.length - 1; i >= 0; i--) {
+        if (
+          lines[i].tool !== "eraser" &&
+          lines[i].layerId === currentLayerId &&
+          isPointNearLine(point, lines[i])
+        ) {
+          hoveredLine = lines[i];
+          break;
+        }
+      }
+
+      if (hoveredLine) {
+        // Select all lines on the same layer (including eraser lines)
+        const sameLayerLineIds = lines
+          .filter((line) => line.layerId === hoveredLine.layerId)
+          .map((line) => line.id);
+        setHoveredLineIds(sameLayerLineIds);
+      } else {
+        setHoveredLineIds([]);
+      }
+    }
+
     if (isDragging && selectedLineIds.length > 0 && dragStartPoint) {
       // Move all selected lines
       const dx = point.x - dragStartPoint.x;
@@ -210,7 +236,15 @@ const HomePage: FC<HomePageProps> = ({ className, ...props }) => {
         return updatedLines;
       });
     }
-  }, [isDragging, selectedLineIds, dragStartPoint, isDrawing, currentTool]);
+  }, [
+    isDragging,
+    selectedLineIds,
+    dragStartPoint,
+    isDrawing,
+    currentTool,
+    currentLayerId,
+    lines,
+  ]);
 
   const handleMouseUp = useCallback(() => {
     if (isDrawing || isDragging) {
@@ -239,6 +273,7 @@ const HomePage: FC<HomePageProps> = ({ className, ...props }) => {
 
   const handleMouseLeave = useCallback(() => {
     setCursorPosition(null);
+    setHoveredLineIds([]);
   }, []);
 
   return (
@@ -249,6 +284,7 @@ const HomePage: FC<HomePageProps> = ({ className, ...props }) => {
         lines={localLines}
         selectedLineId={selectedLineId}
         selectedLineIds={selectedLineIds}
+        hoveredLineIds={hoveredLineIds}
         cursorPosition={cursorPosition}
         stageRef={stageRef}
         currentTool={currentTool}

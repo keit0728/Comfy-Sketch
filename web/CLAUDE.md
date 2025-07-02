@@ -45,6 +45,7 @@ npm run format
 - `src/i18n/` - Internationalization configuration
 - `messages/` - Translation files for different locales
 - `public/` - Static assets
+- `docs/spec/` - Feature specifications and technical documentation
 
 ## Code Conventions
 
@@ -100,3 +101,15 @@ When using Jotai for state management, follow these guidelines for proper hook u
   ```
 
 Choose the appropriate hook based on your component's needs to optimize performance and prevent unnecessary re-renders.
+
+## Feature Specifications
+
+Before implementing new features or modifying existing ones, always review the relevant specifications in the `docs/spec/` directory:
+
+- `docs/spec/pen-tool.md` - Pen tool specifications
+- `docs/spec/eraser-tool.md` - Eraser tool specifications
+- `docs/spec/select-tool.md` - Select tool specifications
+- `docs/spec/layer-system.md` - Layer system specifications
+- `docs/spec/undo-redo.md` - Undo/Redo functionality specifications
+
+These specifications document the expected behavior and implementation details of each feature.

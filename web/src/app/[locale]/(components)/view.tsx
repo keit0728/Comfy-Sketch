@@ -25,7 +25,7 @@ import {
   canRedoAtom,
   initializeHistoryAtom,
 } from "@/stores/history-store";
-import { currentLayerIdAtom } from "@/stores/layer-store";
+import { currentLayerIdAtom, currentLayerAtom } from "@/stores/layer-store";
 import { ToolBar } from "./tool-bar";
 import { DrawingCanvas } from "./drawing-canvas";
 import { DrawingLine, Point } from "@/lib/drawing/types";
@@ -59,6 +59,7 @@ const HomePage: FC<HomePageProps> = ({ className, ...props }) => {
   const canRedo = useAtomValue(canRedoAtom);
   const initializeHistory = useSetAtom(initializeHistoryAtom);
   const currentLayerId = useAtomValue(currentLayerIdAtom);
+  const currentLayer = useAtomValue(currentLayerAtom);
 
   const lines = history.present;
 
@@ -110,6 +111,11 @@ const HomePage: FC<HomePageProps> = ({ className, ...props }) => {
     const point = stage.getPointerPosition();
 
     if (currentTool === "select") {
+      // Check if current layer is locked
+      if (currentLayer?.locked) {
+        return;
+      }
+
       // Find which line was clicked (excluding eraser lines and lines not on current layer)
       let clickedLineId = null;
       let clickedLine = null;
@@ -140,6 +146,11 @@ const HomePage: FC<HomePageProps> = ({ className, ...props }) => {
         setSelectedLineIds([]);
       }
     } else {
+      // Check if current layer is locked
+      if (currentLayer?.locked) {
+        return;
+      }
+
       setIsDrawing(true);
       setSelectedLineId(null);
       setSelectedLineIds([]);
@@ -163,6 +174,7 @@ const HomePage: FC<HomePageProps> = ({ className, ...props }) => {
     setSelectedLineId,
     setSelectedLineIds,
     currentLayerId,
+    currentLayer?.locked,
   ]);
 
   const handleMouseMove = useCallback(() => {

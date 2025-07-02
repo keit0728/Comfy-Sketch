@@ -8,13 +8,18 @@ interface DrawingLineProps {
   line: DrawingLineType;
   isSelected: boolean;
   isHovered: boolean;
+  layerOpacity?: number;
 }
 
 export const DrawingLine: FC<DrawingLineProps> = ({
   line,
   isSelected,
   isHovered,
+  layerOpacity = 1,
 }) => {
+  // Apply layer opacity only for pen tool, not for eraser
+  const lineOpacity = line.tool === "eraser" ? 1 : layerOpacity;
+
   return (
     <React.Fragment>
       <Line
@@ -27,6 +32,7 @@ export const DrawingLine: FC<DrawingLineProps> = ({
         globalCompositeOperation={
           line.tool === "eraser" ? "destination-out" : "source-over"
         }
+        opacity={lineOpacity}
       />
       {isSelected && line.tool !== "eraser" && (
         <Line

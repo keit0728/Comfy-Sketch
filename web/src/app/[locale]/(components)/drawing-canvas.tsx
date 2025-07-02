@@ -78,7 +78,7 @@ export const DrawingCanvas: FC<DrawingCanvasProps> = ({
     >
       {[...layers].reverse().map((layer) => {
         const layerLines = linesByLayer[layer.id];
-        if (!layerLines || layerLines.length === 0) {
+        if (!layer.visible || !layerLines || layerLines.length === 0) {
           return null;
         }
         return (
@@ -92,6 +92,7 @@ export const DrawingCanvas: FC<DrawingCanvasProps> = ({
                   selectedLineIds.includes(line.id)
                 }
                 isHovered={hoveredLineIds.includes(line.id)}
+                layerOpacity={layer.opacity}
               />
             ))}
           </Layer>

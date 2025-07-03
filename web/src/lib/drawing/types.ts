@@ -13,6 +13,9 @@ export interface Layer {
   visible: boolean;
   locked: boolean;
   opacity: number;
+  order: number;
+  blendMode?: string;
+  canvas?: HTMLCanvasElement;
 }
 
 export interface Point {

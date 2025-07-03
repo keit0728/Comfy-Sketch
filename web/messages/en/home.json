@@ -13,6 +13,11 @@
     "undo": "Undo",
     "redo": "Redo",
     "layers": "Layers",
-    "addLayer": "Add Layer"
+    "addLayer": "Add Layer",
+    "export": "Export"
+  },
+  "export": {
+    "exportSuccess": "Image exported successfully",
+    "exportError": "Failed to export image"
   }
 }

@@ -8,6 +8,7 @@ const createDefaultLayer = (): Layer => ({
   visible: true,
   locked: false,
   opacity: 1,
+  order: 0,
 });
 
 const defaultLayer = createDefaultLayer();
@@ -28,6 +29,7 @@ export const addLayerAtom = atom(null, (get, set) => {
     visible: true,
     locked: false,
     opacity: 1,
+    order: layers.length,
   };
   set(layersAtom, [...layers, newLayer]);
   set(currentLayerIdAtom, newLayer.id);

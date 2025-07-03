@@ -36,6 +36,8 @@ import { ToolBar } from "./tool-bar";
 import { DrawingCanvas } from "./drawing-canvas";
 import { DrawingLine, Point } from "@/lib/drawing/types";
 import { generateId, isPointNearLine } from "@/lib/drawing/utils";
+import { useExport } from "@/lib/export/use-export";
+import { getDefaultFilename } from "@/lib/export/utils";
 
 interface HomePageProps extends ComponentProps<"div"> {}
 
@@ -72,6 +74,18 @@ const HomePage: FC<HomePageProps> = ({ className, ...props }) => {
   const initializeLayers = useSetAtom(initializeLayersAtom);
 
   const lines = history.present;
+  const { exportImage } = useExport(dimensions);
+
+  // Export handler
+  const handleExport = useCallback(() => {
+    exportImage({
+      filename: getDefaultFilename(),
+      width: dimensions.width,
+      height: dimensions.height,
+      background: "white",
+      includeHiddenLayers: false,
+    });
+  }, [exportImage, dimensions]);
 
   // Initialize history on mount and load saved data
   useEffect(() => {
@@ -320,7 +334,7 @@ const HomePage: FC<HomePageProps> = ({ className, ...props }) => {
 
   return (
     <div className={className} {...props}>
-      <ToolBar />
+      <ToolBar onExport={handleExport} />
       <DrawingCanvas
         dimensions={dimensions}
         lines={localLines}

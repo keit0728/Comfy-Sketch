@@ -13,6 +13,11 @@
     "undo": "元に戻す",
     "redo": "やり直す",
     "layers": "レイヤー",
-    "addLayer": "レイヤーを追加"
+    "addLayer": "レイヤーを追加",
+    "export": "エクスポート"
+  },
+  "export": {
+    "exportSuccess": "画像を正常にエクスポートしました",
+    "exportError": "画像のエクスポートに失敗しました"
   }
 }

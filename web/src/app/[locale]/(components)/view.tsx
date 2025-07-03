@@ -25,7 +25,13 @@ import {
   canRedoAtom,
   initializeHistoryAtom,
 } from "@/stores/history-store";
-import { currentLayerIdAtom, currentLayerAtom } from "@/stores/layer-store";
+import {
+  currentLayerIdAtom,
+  currentLayerAtom,
+  layersAtom,
+  initializeLayersAtom,
+} from "@/stores/layer-store";
+import { persistDrawingAtom, loadDrawingAtom } from "@/stores/drawing-store";
 import { ToolBar } from "./tool-bar";
 import { DrawingCanvas } from "./drawing-canvas";
 import { DrawingLine, Point } from "@/lib/drawing/types";
@@ -60,18 +66,42 @@ const HomePage: FC<HomePageProps> = ({ className, ...props }) => {
   const initializeHistory = useSetAtom(initializeHistoryAtom);
   const currentLayerId = useAtomValue(currentLayerIdAtom);
   const currentLayer = useAtomValue(currentLayerAtom);
+  const layers = useAtomValue(layersAtom);
+  const persistDrawing = useSetAtom(persistDrawingAtom);
+  const loadDrawing = useSetAtom(loadDrawingAtom);
+  const initializeLayers = useSetAtom(initializeLayersAtom);
 
   const lines = history.present;
 
-  // Initialize history on mount
+  // Initialize history on mount and load saved data
   useEffect(() => {
-    initializeHistory([]);
-  }, [initializeHistory]);
+    const loadSavedData = async () => {
+      const savedData = await loadDrawing();
+      if (savedData) {
+        initializeHistory(savedData.lines);
+        initializeLayers({
+          layers: savedData.layers,
+          currentLayerId: savedData.currentLayerId,
+        });
+      } else {
+        initializeHistory([]);
+      }
+    };
+    loadSavedData();
+  }, [initializeHistory, loadDrawing, initializeLayers]);
 
-  // Update local lines when history changes
+  // Update local lines when history changes and trigger auto-save
   useEffect(() => {
     setLocalLines(history.present);
-  }, [history.present]);
+    // Trigger auto-save
+    if (history.present.length > 0 || layers.length > 0) {
+      persistDrawing({
+        lines: history.present,
+        layers,
+        currentLayerId,
+      });
+    }
+  }, [history.present, layers, currentLayerId, persistDrawing]);
 
   // Handle keyboard shortcuts for undo/redo
   useEffect(() => {

@@ -28,15 +28,22 @@ import {
   Undo2,
   Redo2,
   Layers,
+  Download,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { BrushSizeSelector } from "./brush-size-selector";
 import { LayerList } from "./layer-list";
 
-interface ToolBarProps extends ComponentProps<"div"> {}
+interface ToolBarProps extends ComponentProps<"div"> {
+  onExport?: () => void;
+}
 
-export const ToolBar: FC<ToolBarProps> = ({ className, ...props }) => {
+export const ToolBar: FC<ToolBarProps> = ({
+  className,
+  onExport,
+  ...props
+}) => {
   const [currentTool, setCurrentTool] = useAtom(currentToolAtom);
   const [brushSize] = useAtom(brushSizeAtom);
   const [brushColor, setBrushColor] = useAtom(brushColorAtom);
@@ -163,6 +170,16 @@ export const ToolBar: FC<ToolBarProps> = ({ className, ...props }) => {
             <LayerList onClose={() => setOpenLayers(false)} />
           </PopoverContent>
         </Popover>
+        <div className="h-8 w-px bg-gray-300" />
+        <Toggle
+          pressed={false}
+          onPressedChange={() => onExport?.()}
+          aria-label={t("export")}
+          className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+        >
+          <Download className="h-4 w-4" />
+          <span className="ml-2">{t("export")}</span>
+        </Toggle>
       </div>
     </Card>
   );

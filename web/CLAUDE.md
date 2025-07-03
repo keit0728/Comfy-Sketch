@@ -74,10 +74,19 @@ npm run format
 
 ## Internationalization (i18n)
 
-- All features must support i18n
+- All features must support i18n (both English and Japanese)
 - Manage i18n message files according to these rules:
-  - `common.json` - Store strings used in common components
-  - `page-name.json` - Store strings used in page-specific components
+  - Messages are organized by page in `messages/[locale]/[page-name].json`
+  - `common.json` - Store strings used in common components shared across pages
+  - `[page-name].json` - Store ALL strings used in that specific page, including:
+    - Page-specific component strings
+    - Dialog messages related to that page
+    - Toast/notification messages for that page's features
+  - Example: For the home page, all export dialog messages should be in `home.json` under `exportDialog` section, NOT in a separate `export.json` file
+- When implementing new features:
+  - Always add both English and Japanese translations
+  - Group related messages under logical sections within the page's JSON file
+  - Use nested structure for related UI components (e.g., `home.toolbar`, `home.exportDialog`)
 
 ## State Management with Jotai
 

@@ -69,3 +69,13 @@ export const reorderLayersAtom = atom(
     set(layersAtom, newLayers);
   },
 );
+
+export const initializeLayersAtom = atom(
+  null,
+  (get, set, data: { layers: Layer[]; currentLayerId: string }) => {
+    if (data.layers.length > 0) {
+      set(layersAtom, data.layers);
+      set(currentLayerIdAtom, data.currentLayerId);
+    }
+  },
+);

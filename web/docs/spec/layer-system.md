@@ -201,9 +201,130 @@ const newLine: DrawingLine = {
 - レイヤーの`opacity`プロパティ（0-1の範囲）がKonvaのLayerコンポーネントに適用
 - UIではスライダーで0-100%として表示・調整
 
+## レイヤーの拡大縮小機能
+
+### 概要
+
+レイヤー単位での拡大縮小（スケーリング）機能により、レイヤー内のすべての描画要素をまとめて拡大・縮小できます。
+
+### データ構造の拡張
+
+#### Layer型への追加プロパティ
+
+```typescript
+interface Layer {
+  id: string;
+  name: string;
+  visible: boolean;
+  locked: boolean;
+  opacity: number;
+  scale: number; // 拡大率（デフォルト: 1.0）
+  scaleX: number; // X軸方向の拡大率（デフォルト: 1.0）
+  scaleY: number; // Y軸方向の拡大率（デフォルト: 1.0）
+  origin: { x: number; y: number }; // 拡大縮小の基準点（デフォルト: キャンバス中心）
+}
+```
+
+### 拡大縮小の仕様
+
+#### 基本動作
+
+1. **均等スケーリング**: デフォルトでは縦横比を保ったまま拡大縮小
+2. **独立スケーリング**: X軸・Y軸で独立して拡大縮小可能（オプション）
+3. **基準点設定**: 拡大縮小の中心点を設定可能
+   - デフォルト: キャンバスの中心
+   - オプション: レイヤーの中心、任意の座標
+
+#### UI要素
+
+1. **スケールスライダー**:
+   - 範囲: 10% - 500%（0.1 - 5.0）
+   - デフォルト: 100%（1.0）
+   - レイヤーリスト内に配置
+
+2. **リセットボタン**:
+   - スケールを100%に戻す
+   - 基準点をデフォルトに戻す
+
+3. **詳細設定**（オプション）:
+   - X軸・Y軸の独立スケーリング
+   - 基準点の座標入力
+
+### 実装詳細
+
+#### レイヤーストアの拡張
+
+```typescript
+// 拡大縮小操作用のAtom
+export const updateLayerScaleAtom = atom(
+  null,
+  (
+    get,
+    set,
+    { layerId, scale, scaleX, scaleY, origin }: UpdateLayerScaleParams,
+  ) => {
+    const layers = get(layersAtom);
+    const updatedLayers = layers.map((layer) =>
+      layer.id === layerId
+        ? {
+            ...layer,
+            scale: scale ?? layer.scale,
+            scaleX: scaleX ?? layer.scaleX,
+            scaleY: scaleY ?? layer.scaleY,
+            origin: origin ?? layer.origin,
+          }
+        : layer,
+    );
+    set(layersAtom, updatedLayers);
+  },
+);
+```
+
+#### 描画時の適用（drawing-canvas.tsx）
+
+```typescript
+<Layer
+  key={layer.id}
+  opacity={layer.opacity}
+  visible={layer.visible}
+  scaleX={layer.scaleX || layer.scale || 1}
+  scaleY={layer.scaleY || layer.scale || 1}
+  x={layer.origin?.x || canvasWidth / 2}
+  y={layer.origin?.y || canvasHeight / 2}
+  offsetX={layer.origin?.x || canvasWidth / 2}
+  offsetY={layer.origin?.y || canvasHeight / 2}
+>
+  {/* レイヤー内の描画要素 */}
+</Layer>
+```
+
+### 選択ツールとの連携
+
+- レイヤーがスケーリングされている場合、選択ツールの座標計算にスケール値を考慮
+- 選択枠の表示もスケールに応じて調整
+- 移動操作時もスケール値を考慮した座標変換を適用
+
+### エクスポート時の処理
+
+- PNG/SVGエクスポート時に、レイヤーのスケール値を適用してエクスポート
+- スケール適用後の実際のサイズでエクスポート
+
+### 制限事項
+
+- 最小スケール: 10%（0.1）
+- 最大スケール: 500%（5.0）
+- メモリ使用量を考慮し、極端な拡大は制限
+
+### パフォーマンス最適化
+
+- スケール値が1.0の場合は変換処理をスキップ
+- リアルタイムプレビュー時は描画品質を調整
+- スケール操作中は一時的に他のレイヤーの再描画を抑制
+
 ## パフォーマンス考慮事項
 
 - レイヤーごとにKonvaのLayerコンポーネントを使用することで、再描画を最適化
 - 空のレイヤーはスキップして描画しない
 - 非表示のレイヤーはレンダリングしない
 - レイヤー数が増えてもパフォーマンスへの影響は限定的
+- スケーリング時は必要最小限の再描画で対応

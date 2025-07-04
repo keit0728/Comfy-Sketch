@@ -6,8 +6,12 @@ import Konva from "konva";
 import { useAtomValue } from "jotai";
 import { DrawingLine as DrawingLineComponent } from "./drawing-line";
 import { CursorDisplay } from "./cursor-display";
+import { BoundingBoxComponent } from "./bounding-box";
 import { DrawingLine, Point } from "@/lib/drawing/types";
 import { layersAtom } from "@/stores/layer-store";
+import { transformStateAtom } from "@/stores/transform-store";
+import { TransformHandle } from "@/lib/transform/types";
+import { calculateBoundingBox } from "@/lib/transform/utils";
 
 interface DrawingCanvasProps {
   dimensions: { width: number; height: number };
@@ -24,6 +28,10 @@ interface DrawingCanvasProps {
   onMouseMove: () => void;
   onMouseUp: () => void;
   onMouseLeave: () => void;
+  onHandleMouseDown?: (
+    handle: TransformHandle,
+    e: Konva.KonvaEventObject<MouseEvent>,
+  ) => void;
 }
 
 export const DrawingCanvas: FC<DrawingCanvasProps> = ({
@@ -41,8 +49,10 @@ export const DrawingCanvas: FC<DrawingCanvasProps> = ({
   onMouseMove,
   onMouseUp,
   onMouseLeave,
+  onHandleMouseDown,
 }) => {
   const layers = useAtomValue(layersAtom);
+  const transformState = useAtomValue(transformStateAtom);
 
   // Group lines by layer ID
   const linesByLayer = lines.reduce(
@@ -82,7 +92,7 @@ export const DrawingCanvas: FC<DrawingCanvasProps> = ({
           return null;
         }
         return (
-          <Layer key={layer.id}>
+          <Layer key={layer.id} opacity={layer.opacity}>
             {layerLines.map((line) => (
               <DrawingLineComponent
                 key={line.id}
@@ -92,7 +102,7 @@ export const DrawingCanvas: FC<DrawingCanvasProps> = ({
                   selectedLineIds.includes(line.id)
                 }
                 isHovered={hoveredLineIds.includes(line.id)}
-                layerOpacity={layer.opacity}
+                layerOpacity={1}
               />
             ))}
           </Layer>
@@ -106,6 +116,28 @@ export const DrawingCanvas: FC<DrawingCanvasProps> = ({
           brushColor={brushColor}
         />
       </Layer>
+      {/* Bounding box layer */}
+      {selectedLineIds.length > 0 && currentTool === "select" && (
+        <Layer>
+          {(() => {
+            const selectedLines = lines.filter((line) =>
+              selectedLineIds.includes(line.id),
+            );
+            const boundingBox = calculateBoundingBox(selectedLines);
+            if (boundingBox && onHandleMouseDown) {
+              return (
+                <BoundingBoxComponent
+                  boundingBox={boundingBox}
+                  onHandleMouseDown={onHandleMouseDown}
+                  currentScale={transformState.currentScale}
+                  isTransforming={transformState.isTransforming}
+                />
+              );
+            }
+            return null;
+          })()}
+        </Layer>
+      )}
     </Stage>
   );
 };

@@ -10,8 +10,12 @@ export const calculateBoundingBox = (
   let minY = Infinity;
   let maxX = -Infinity;
   let maxY = -Infinity;
+  let maxStrokeWidth = 0;
 
   lines.forEach((line) => {
+    // Track the maximum stroke width
+    maxStrokeWidth = Math.max(maxStrokeWidth, line.strokeWidth);
+
     for (let i = 0; i < line.points.length; i += 2) {
       const x = line.points[i];
       const y = line.points[i + 1];
@@ -22,11 +26,14 @@ export const calculateBoundingBox = (
     }
   });
 
+  // Add half of the stroke width as padding to ensure the entire line is contained
+  const padding = maxStrokeWidth / 2;
+
   return {
-    x: minX,
-    y: minY,
-    width: maxX - minX,
-    height: maxY - minY,
+    x: minX - padding,
+    y: minY - padding,
+    width: maxX - minX + padding * 2,
+    height: maxY - minY + padding * 2,
   };
 };
 
@@ -97,7 +104,7 @@ export const getAnchorPoint = (
 };
 
 export const calculateScaleFromDrag = (
-  startBounds: BoundingBox,
+  _startBounds: BoundingBox,
   anchorPoint: { x: number; y: number },
   startMousePos: { x: number; y: number },
   currentMousePos: { x: number; y: number },

@@ -9,6 +9,7 @@ import React, {
   useCallback,
 } from "react";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
+import Konva from "konva";
 import {
   currentToolAtom,
   brushSizeAtom,
@@ -32,12 +33,26 @@ import {
   initializeLayersAtom,
 } from "@/stores/layer-store";
 import { persistDrawingAtom, loadDrawingAtom } from "@/stores/drawing-store";
+import {
+  transformStateAtom,
+  startTransformAtom,
+  updateTransformAtom,
+  endTransformAtom,
+} from "@/stores/transform-store";
 import { ToolBar } from "./tool-bar";
 import { DrawingCanvas } from "./drawing-canvas";
 import { DrawingLine, Point } from "@/lib/drawing/types";
 import { generateId, isPointNearLine } from "@/lib/drawing/utils";
 import { useExport } from "@/lib/export/use-export";
 import { getDefaultFilename } from "@/lib/export/utils";
+import { TransformHandle } from "@/lib/transform/types";
+import {
+  calculateBoundingBox,
+  getAnchorPoint,
+  calculateScaleFromDrag,
+  transformLine,
+  isPointInBoundingBox,
+} from "@/lib/transform/utils";
 
 interface HomePageProps extends ComponentProps<"div"> {}
 
@@ -72,6 +87,11 @@ const HomePage: FC<HomePageProps> = ({ className, ...props }) => {
   const persistDrawing = useSetAtom(persistDrawingAtom);
   const loadDrawing = useSetAtom(loadDrawingAtom);
   const initializeLayers = useSetAtom(initializeLayersAtom);
+
+  const transformState = useAtomValue(transformStateAtom);
+  const startTransform = useSetAtom(startTransformAtom);
+  const updateTransform = useSetAtom(updateTransformAtom);
+  const endTransform = useSetAtom(endTransformAtom);
 
   const lines = history.present;
   const { exportImage } = useExport(dimensions);
@@ -117,6 +137,14 @@ const HomePage: FC<HomePageProps> = ({ className, ...props }) => {
     }
   }, [history.present, layers, currentLayerId, persistDrawing]);
 
+  // Clear selection when tool changes
+  useEffect(() => {
+    if (currentTool !== "select") {
+      setSelectedLineId(null);
+      setSelectedLineIds([]);
+    }
+  }, [currentTool, setSelectedLineId, setSelectedLineIds]);
+
   // Handle keyboard shortcuts for undo/redo
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -160,6 +188,21 @@ const HomePage: FC<HomePageProps> = ({ className, ...props }) => {
         return;
       }
 
+      // Check if clicking inside existing bounding box
+      if (selectedLineIds.length > 0) {
+        const selectedLines = lines.filter((line) =>
+          selectedLineIds.includes(line.id),
+        );
+        const boundingBox = calculateBoundingBox(selectedLines);
+
+        if (boundingBox && isPointInBoundingBox(point, boundingBox)) {
+          // Start dragging the selection
+          setIsDragging(true);
+          setDragStartPoint(point);
+          return;
+        }
+      }
+
       // Find which line was clicked (excluding eraser lines and lines not on current layer)
       let clickedLineId = null;
       let clickedLine = null;
@@ -175,18 +218,19 @@ const HomePage: FC<HomePageProps> = ({ className, ...props }) => {
         }
       }
 
-      setSelectedLineId(clickedLineId);
-
       if (clickedLineId && clickedLine) {
         // Select all lines on the same layer (including eraser lines)
         const sameLayerLineIds = lines
           .filter((line) => line.layerId === clickedLine.layerId)
           .map((line) => line.id);
 
+        setSelectedLineId(clickedLineId);
         setSelectedLineIds(sameLayerLineIds);
         setIsDragging(true);
         setDragStartPoint(point);
       } else {
+        // Clicked outside - clear selection
+        setSelectedLineId(null);
         setSelectedLineIds([]);
       }
     } else {
@@ -218,10 +262,61 @@ const HomePage: FC<HomePageProps> = ({ className, ...props }) => {
     setSelectedLineId,
     setSelectedLineIds,
     currentLayerId,
-    currentLayer?.locked,
+    currentLayer,
+    selectedLineIds,
   ]);
 
+  // Store original lines when transform starts
+  const originalLinesRef = useRef<DrawingLine[]>([]);
+
+  // Update mouse move handler to handle transform
+  const handleTransformMouseMove = useCallback(() => {
+    if (!transformState.isTransforming || !transformState.startMousePos) return;
+
+    const stage = stageRef.current;
+    const point = stage.getPointerPosition();
+
+    const newScale = calculateScaleFromDrag(
+      transformState.startBounds!,
+      transformState.anchorPoint,
+      transformState.startMousePos,
+      point,
+    );
+
+    updateTransform(newScale);
+
+    // Apply transform to original lines (not the already transformed ones)
+    const transformedLines = lines.map((line) => {
+      if (selectedLineIds.includes(line.id)) {
+        const originalLine =
+          originalLinesRef.current.find((l) => l.id === line.id) || line;
+        return transformLine(
+          originalLine,
+          newScale,
+          transformState.anchorPoint,
+        );
+      }
+      return line;
+    });
+
+    setLocalLines(transformedLines);
+  }, [transformState, selectedLineIds, lines, updateTransform]);
+
+  // Update mouse up handler to handle transform end
+  const handleTransformMouseUp = useCallback(() => {
+    if (transformState.isTransforming) {
+      pushHistory(localLines);
+      endTransform();
+      setIsDragging(false);
+    }
+  }, [transformState.isTransforming, localLines, pushHistory, endTransform]);
+
   const handleMouseMove = useCallback(() => {
+    // Handle transform mouse move
+    if (transformState.isTransforming) {
+      handleTransformMouseMove();
+      return;
+    }
     const now = Date.now();
     if (now - lastMouseMoveTime.current < mouseThrottleDelay) {
       return;
@@ -300,9 +395,17 @@ const HomePage: FC<HomePageProps> = ({ className, ...props }) => {
     currentTool,
     currentLayerId,
     lines,
+    transformState,
+    handleTransformMouseMove,
   ]);
 
   const handleMouseUp = useCallback(() => {
+    // Handle transform mouse up
+    if (transformState.isTransforming) {
+      handleTransformMouseUp();
+      return;
+    }
+
     if (isDrawing || isDragging) {
       // Push current state to history when finishing drawing or dragging
       pushHistory(localLines);
@@ -311,26 +414,51 @@ const HomePage: FC<HomePageProps> = ({ className, ...props }) => {
     setIsDrawing(false);
     setIsDragging(false);
     setDragStartPoint(null);
-
-    // 選択ツールの場合は選択を解除
-    if (currentTool === "select") {
-      setSelectedLineId(null);
-      setSelectedLineIds([]);
-    }
   }, [
-    currentTool,
-    setSelectedLineId,
     isDrawing,
     isDragging,
     localLines,
     pushHistory,
-    setSelectedLineIds,
+    transformState,
+    handleTransformMouseUp,
   ]);
 
   const handleMouseLeave = useCallback(() => {
     setCursorPosition(null);
     setHoveredLineIds([]);
   }, []);
+
+  // Handle transform operations
+  const handleTransformMouseDown = useCallback(
+    (handle: TransformHandle, e: Konva.KonvaEventObject<MouseEvent>) => {
+      e.cancelBubble = true;
+
+      const selectedLines = lines.filter((line) =>
+        selectedLineIds.includes(line.id),
+      );
+      const boundingBox = calculateBoundingBox(selectedLines);
+
+      if (!boundingBox) return;
+
+      const stage = stageRef.current;
+      const point = stage.getPointerPosition();
+      const anchorPoint = getAnchorPoint(boundingBox, handle.position);
+
+      // Store original lines before transform
+      originalLinesRef.current = selectedLines.map((line) => ({ ...line }));
+
+      startTransform({
+        transformType: "scale",
+        startBounds: boundingBox,
+        anchorPoint,
+        startMousePos: point,
+        currentScale: { x: 1, y: 1 },
+      });
+
+      setIsDragging(true);
+    },
+    [lines, selectedLineIds, startTransform],
+  );
 
   return (
     <div className={className} {...props}>
@@ -350,6 +478,7 @@ const HomePage: FC<HomePageProps> = ({ className, ...props }) => {
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseLeave}
+        onHandleMouseDown={handleTransformMouseDown}
       />
     </div>
   );
